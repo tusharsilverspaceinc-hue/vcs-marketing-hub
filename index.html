@@ -2810,8 +2810,23 @@ function enhanceEmbeddedIframe(config) {
     "  function cleanValue(value) {\n" +
     "    return typeof value === 'string' ? value.trim() : (value == null ? '' : value);\n" +
     "  }\n" +
+    "  var FIELD_LABELS = CONFIG.table === 'bsr_submissions' ? {\n" +
+    "    empName: 'Employee Name', empID: 'Employee ID', deptInput: 'Department', branchInput: 'Branch / Location', teamLeadName: 'Team Lead / Manager', designationInput: 'Designation', reviewDate: 'Date of Review', monthInput: 'Review Period (Month)',\n" +
+    "    attWorkDays: 'Working Days', attPresent: 'Days Present', attKPI: 'Attendance KPI %', attRating: 'Attendance Rating / 5', intTarget: 'Interview Target', intAchieved: 'Interviews Achieved', intKPI: 'Interview KPI %', intRating: 'Interview Rating / 5',\n" +
+    "    subTarget: 'Submission Target', subAchieved: 'Submissions Achieved', subKPI: 'Submission KPI %', subRating: 'Submission Rating / 5', poTarget: 'PO Target', poAchieved: 'PO Achieved', poKPI: 'PO KPI %', poRating: 'PO Rating / 5',\n" +
+    "    'ai-emp-kpi': 'Employee Self-Assessment on Submission, Interview and PO Closures', subScoreMetric: 'Submission Score / 5', 'ai-tl-kpi': 'Team Lead Feedback on Submission, Interview and PO Closures', intScoreMetric: 'Interview Score / 5', poScoreMetric: 'PO Score / 5',\n" +
+    "    'ai-emp-345': 'Employee Self-Assessment on Productivity, Work Ethics & Innovation, and Discipline', pqScoreMetric: 'Productivity Score / 5', 'ai-tl-345': 'Team Lead Feedback on Productivity, Work Ethics & Innovation, and Discipline', weiScoreMetric: 'Work Ethics & Innovation Score / 5', attScoreMetric: 'Discipline Score / 5',\n" +
+    "    'ai-combined': 'Final Combined Feedback', avgScore: 'Overall Average Score', scoreBreakdown: 'Score Breakdown', ratingText: 'Overall Rating', tlSignDisplay: 'Authorized Signatory'\n" +
+    "  } : {\n" +
+    "    empName: 'Employee Name', empID: 'Employee ID', deptInput: 'Department', branchInput: 'Branch / Location', teamLeadName: 'Team Lead / Manager', designationInput: 'Designation', reviewDate: 'Date of Review', monthInput: 'Review Period (Month)',\n" +
+    "    attWorkDays: 'Working Days', attPresent: 'Days Present', attKPI: 'Attendance KPI %', attRating: 'Attendance Rating / 5', poTarget: 'PO Target', poAchieved: 'PO Achieved', poKPI: 'PO KPI %', poRating: 'PO Rating / 5',\n" +
+    "    appTarget: 'Application Target', appAchieved: 'Applications Achieved', appKPI: 'Application KPI %', appRating: 'Application Rating / 5',\n" +
+    "    'ai-emp-kpi': 'Employee Self-Assessment on PO Closures & Applications', poScoreMetric: 'PO Score / 5', 'ai-tl-kpi': 'Team Lead Feedback on PO Closures & Applications', appScoreMetric: 'Application Score / 5',\n" +
+    "    'ai-emp-345': 'Employee Self-Assessment on Productivity, Work Ethics & Innovation, and Discipline', pqScoreMetric: 'Productivity Score / 5', 'ai-tl-345': 'Team Lead Feedback on Productivity, Work Ethics & Innovation, and Discipline', weiScoreMetric: 'Work Ethics & Innovation Score / 5', attScoreMetric: 'Discipline Score / 5',\n" +
+    "    'ai-combined': 'Final Combined Feedback', avgScore: 'Overall Average Score', scoreBreakdown: 'Score Breakdown', ratingText: 'Overall Rating', tlSignDisplay: 'Authorized Signatory'\n" +
+    "  };\n" +
     "  function getKey(el, index) {\n" +
-    "    return el.name || el.id || el.placeholder || ('field_' + index);\n" +
+    "    return FIELD_LABELS[el.id] || el.name || el.id || el.placeholder || ('field_' + index);\n" +
     "  }\n" +
     "  function serializeDocument() {\n" +
     "    var data = {};\n" +
@@ -2839,8 +2854,10 @@ function enhanceEmbeddedIframe(config) {
     "    for (var i = 0; i < keys.length; i += 1) {\n" +
     "      var key = keys[i];\n" +
     "      var byId = document.getElementById(key);\n" +
+    "      var labelKey = FIELD_LABELS[key];\n" +
     "      if (byId && cleanValue(byId.value || byId.textContent)) return cleanValue(byId.value || byId.textContent);\n" +
     "      if (payload[key]) return cleanValue(payload[key]);\n" +
+    "      if (labelKey && payload[labelKey]) return cleanValue(payload[labelKey]);\n" +
     "      var byName = document.querySelector('[name=\"' + key + '\"]');\n" +
     "      if (byName && cleanValue(byName.value || byName.textContent)) return cleanValue(byName.value || byName.textContent);\n" +
     "    }\n" +
@@ -2855,7 +2872,7 @@ function enhanceEmbeddedIframe(config) {
     "      };\n" +
     "    }\n" +
     "    return {\n" +
-    "      record_name: findValue(['candidateName', 'fullName', 'applicantName', 'name', 'empName'], payload),\n" +
+    "      record_name: findValue(['empName', 'candidateName', 'fullName', 'applicantName', 'name'], payload),\n" +
     "      primary_email: findValue(['email', 'emailId', 'candidateEmail', 'applicantEmail', 'refVendorLinkedIn'], payload),\n" +
     "      payload: payload\n" +
     "    };\n" +
