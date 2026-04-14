@@ -2709,14 +2709,69 @@ input.date-invalid {
     <!-- FOOTER -->
     <div class="ref-form-footer">
       <button type="button" class="btn-clear" onclick="clearRefForm()">↺ Clear</button>
-      <button type="button" class="btn-submit" onclick="downloadRefDoc()" style="background:linear-gradient(135deg,var(--g),var(--c));color:#fff;border:none;padding:.75rem 1.8rem;font-family:'Fira Code',monospace;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">↓ Download .doc</button>
+      <button type="submit" class="btn-submit" style="background:linear-gradient(135deg,var(--g),var(--c));color:#fff;border:none;padding:.75rem 1.8rem;font-family:'Fira Code',monospace;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">↓ Save & Download .doc</button>
     </div>
 
   </form>
 </div><!-- end panel-ref -->
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL = 'https://clhxaqvrhyakypbpxssl.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ptQOSEiYzJnIhOLRhjBbgQ_wMe6vbtj';
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+  : null;
+
+function getSubmitButton(form) {
+  return form ? form.querySelector('button[type="submit"]') : null;
+}
+
+function setButtonBusy(button, busy, busyLabel) {
+  if (!button) return;
+  if (!button.dataset.defaultLabel) button.dataset.defaultLabel = button.innerHTML;
+  button.disabled = busy;
+  button.style.opacity = busy ? '0.7' : '1';
+  button.style.cursor = busy ? 'wait' : 'pointer';
+  button.innerHTML = busy ? busyLabel : button.dataset.defaultLabel;
+}
+
+function serializeForm(form) {
+  const data = {};
+  const radioSeen = new Set();
+
+  Array.from(form.elements).forEach(function(el) {
+    if (!el.name || el.disabled) return;
+
+    if (el.type === 'radio') {
+      if (radioSeen.has(el.name)) return;
+      radioSeen.add(el.name);
+      const checked = form.querySelector('[name="' + el.name + '"]:checked');
+      data[el.name] = checked ? checked.value : '';
+      return;
+    }
+
+    if (el.type === 'checkbox') {
+      data[el.name] = el.checked;
+      return;
+    }
+
+    data[el.name] = typeof el.value === 'string' ? el.value.trim() : el.value;
+  });
+
+  return data;
+}
+
+async function saveSubmission(table, row) {
+  if (!supabaseClient) {
+    throw new Error('Supabase client failed to load.');
+  }
+
+  const result = await supabaseClient.from(table).insert(row);
+  if (result.error) throw result.error;
+  return result;
+}
 /* ── Progress bar — single passive listener ── */
 (function(){
   const b = document.getElementById('prog');
@@ -2951,7 +3006,26 @@ function downloadAsDoc() {
 
 function handleSubmit(e) {
   e.preventDefault();
-  alert('Form submitted successfully!');
+  const form = e.target;
+  const button = getSubmitButton(form);
+  const payload = serializeForm(form);
+
+  setButtonBusy(button, true, '<span>Saving...</span>');
+
+  saveSubmission('candidate_submissions', {
+    candidate_name: payload.candidateName || '',
+    candidate_email: payload.email || '',
+    candidate_phone: payload.phone || '',
+    payload: payload
+  }).then(function() {
+    alert('Form submitted and saved to Supabase successfully!');
+    form.reset();
+  }).catch(function(error) {
+    console.error(error);
+    alert('Unable to save this form right now. Please try again.');
+  }).finally(function() {
+    setButtonBusy(button, false);
+  });
 }
 
 /* ── Phone auto-format: +1 xxx-xxx-xxxx ── */
@@ -3252,19 +3326,46 @@ function clearRefForm() {
   document.getElementById('refForm').reset();
 }
 
-function handleRefSubmit(e) { e.preventDefault(); downloadRefDoc(); }
+async function handleRefSubmit(e) {
+  e.preventDefault();
 
-/* ── Reference Check Download ── */
-function downloadRefDoc() {
-  /* ── Validate all required fields ── */
+  var form = document.getElementById('refForm');
+  var button = getSubmitButton(form);
+  var payload;
+
+  if (!validateRefForm()) return;
+
+  payload = serializeForm(form);
+  setButtonBusy(button, true, 'Saving...');
+
+  try {
+    await saveSubmission('reference_submissions', {
+      candidate_name: payload.refCandName || '',
+      vendor_email: payload.refVendorLinkedIn || '',
+      vendor_phone: payload.refVendorMobile || '',
+      payload: payload
+    });
+    downloadRefDoc(true);
+    alert('Reference form saved to Supabase and downloaded successfully!');
+  } catch (error) {
+    console.error(error);
+    alert('Unable to save the reference form right now. Please try again.');
+  } finally {
+    setButtonBusy(button, false);
+  }
+}
+
+function validateRefForm() {
   var form = document.getElementById('refForm');
   var required = form.querySelectorAll('input[required], select[required], textarea[required]');
   var invalid = [];
+
   required.forEach(function(el) {
     el.style.borderColor = '';
     el.style.boxShadow  = '';
     if (!el.value.trim()) invalid.push(el);
   });
+
   if (invalid.length > 0) {
     invalid.forEach(function(el) {
       el.style.borderColor = '#FF2255';
@@ -3277,8 +3378,15 @@ function downloadRefDoc() {
     });
     invalid[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     invalid[0].focus();
-    return;
+    return false;
   }
+
+  return true;
+}
+
+/* ── Reference Check Download ── */
+function downloadRefDoc(skipValidation) {
+  if (!skipValidation && !validateRefForm()) return;
 
   function rv(n){ var el=document.querySelector('[name="'+n+'"]'); return el?el.value:''; }
 
