@@ -3033,17 +3033,18 @@ function poRows(total, amd, ggr, lko) {
 
 function poRowsMerged(total, amd, ggr, lko) {
   const rows = [
-    ['TOTAL -', total],
-    ['AMD -', amd],
-    ['GGR -', ggr],
-    ['LKO -', lko],
+    ['Total', total],
+    ['AMD', amd],
+    ['GGR', ggr],
+    ['LKO', lko],
   ];
   return rows.map(function(r, i) {
     const groupCell = i === 0
       ? `<td rowspan="4" style="${sGroupCol}">PO Count</td>`
       : '';
     return `<tr>${groupCell}
-      <td colspan="2" style="${sPlain}">${r[0]} ${r[1]}</td>
+      <td style="${sSubCol}">${r[0]}</td>
+      <td style="${sValCol}">${r[1]}</td>
     </tr>`;
   }).join('');
 }
