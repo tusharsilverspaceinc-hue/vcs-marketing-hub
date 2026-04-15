@@ -3019,15 +3019,31 @@ function poRows(total, amd, ggr, lko) {
     ['TOTAL –', total],
     ['AMD –',   amd],
     ['GGR –',   ggr],
-    ['LKO -',   lko],
+    ['LKO â€“',   lko],
   ];
   return rows.map((r, i) => {
     const groupCell = i === 0
       ? `<td rowspan="4" style="${sGroupCol}">PO Count</td>`
       : '';
     return `<tr>${groupCell}
-      <td style="${sSubCol}">${r[0]}</td>
-      <td style="${sValCol}">${r[1]}</td>
+      <td colspan="2" style="${sPlain} width:${W2};">${r[0]} ${r[1]}</td>
+    </tr>`;
+  }).join('');
+}
+
+function poRowsMerged(total, amd, ggr, lko) {
+  const rows = [
+    ['TOTAL -', total],
+    ['AMD -', amd],
+    ['GGR -', ggr],
+    ['LKO -', lko],
+  ];
+  return rows.map(function(r, i) {
+    const groupCell = i === 0
+      ? `<td rowspan="4" style="${sGroupCol}">PO Count</td>`
+      : '';
+    return `<tr>${groupCell}
+      <td colspan="2" style="${sPlain}">${r[0]} ${r[1]}</td>
     </tr>`;
   }).join('');
 }
@@ -3114,7 +3130,7 @@ function downloadAsDoc() {
   ${pr('Name of Candidate:', d.name)}
   ${pr('SST/Vizva', d.sst)}
   ${pr('Location', d.location)}
-  ${poRows(d.poTotal, d.poAMD, d.poGGR, d.poLKO)}
+  ${poRowsMerged(d.poTotal, d.poAMD, d.poGGR, d.poLKO)}
   ${pr('Personal Phone Number', d.phone)}
   ${pr('Email ID', d.email)}
   ${pr('Full Address', d.address)}
