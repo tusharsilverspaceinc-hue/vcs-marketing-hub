@@ -2907,7 +2907,6 @@ function enhanceEmbeddedIframe(config) {
     "    });\n" +
     "  }\n" +
     "  function sanitizeBrokenText() {\n" +
-    "    if (CONFIG.table !== 'bsr_submissions') return;\n" +
     "    var replacements = [\n" +
     "      ['Employee self-assessment on Submission, Interview and PO ClosuresÂ', 'Employee self-assessment on Submission, Interview and PO Closures'],\n" +
     "      ['Team Lead feedback on Submission, Interview and PO ClosuresÂ', 'Team Lead feedback on Submission, Interview and PO Closures'],\n" +
@@ -2934,10 +2933,11 @@ function enhanceEmbeddedIframe(config) {
     "    });\n" +
     "  }\n" +
     "  function normalizeBSRSuggestionText() {\n" +
-    "    if (CONFIG.table !== 'bsr_submissions') return;\n" +
     "    var fixes = [\n" +
     "      [/Employee self-assessment on Submission, Interview and PO Closures[^A-Za-z0-9)]*/gi, 'Employee self-assessment on Submission, Interview and PO Closures'],\n" +
     "      [/Team Lead feedback on Submission, Interview and PO Closures[^A-Za-z0-9)]*/gi, 'Team Lead feedback on Submission, Interview and PO Closures'],\n" +
+    "      [/Employee self-assessment on PO Closures\\s*&\\s*Applications[^A-Za-z0-9)]*/gi, 'Employee self-assessment on PO Closures & Applications'],\n" +
+    "      [/Team Lead feedback on PO Closures\\s*&\\s*Applications[^A-Za-z0-9)]*/gi, 'Team Lead feedback on PO Closures & Applications'],\n" +
     "      [/Employee self-assessment on Productivity, Work Ethics\\s*&\\s*Innovation, and Discipline[^A-Za-z0-9)]*/gi, 'Employee self-assessment on Productivity, Work Ethics & Innovation, and Discipline'],\n" +
     "      [/Team Lead feedback on Productivity, Work Ethics\\s*&\\s*Innovation, and Discipline[^A-Za-z0-9)]*/gi, 'Team Lead feedback on Productivity, Work Ethics & Innovation, and Discipline'],\n" +
     "      [/Additional Tasks[^\\n\\r]*/gi, 'Additional Tasks - Areas for Development - Goals Achievement - Communication & Collaboration - Training & Upskilling - Overall Feedback']\n" +
@@ -2999,10 +2999,23 @@ function enhanceEmbeddedIframe(config) {
     "      return originalExport.apply(this, arguments);\n" +
     "    };\n" +
     "  }\n" +
+    "  function runTextCleanup() {\n" +
+    "    applyBSRLabel();\n" +
+    "    sanitizeBrokenText();\n" +
+    "    normalizeBSRSuggestionText();\n" +
+    "  }\n" +
     "  if (document.readyState === 'loading') {\n" +
-    "    document.addEventListener('DOMContentLoaded', wireExport, { once: true });\n" +
+    "    document.addEventListener('DOMContentLoaded', function() {\n" +
+    "      runTextCleanup();\n" +
+    "      wireExport();\n" +
+    "      setTimeout(runTextCleanup, 300);\n" +
+    "      setTimeout(runTextCleanup, 1200);\n" +
+    "    }, { once: true });\n" +
     "  } else {\n" +
+    "    runTextCleanup();\n" +
     "    wireExport();\n" +
+    "    setTimeout(runTextCleanup, 300);\n" +
+    "    setTimeout(runTextCleanup, 1200);\n" +
     "  }\n" +
     "})();<\/script>"
   );
