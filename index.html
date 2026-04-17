@@ -2279,6 +2279,7 @@ input.date-invalid {
             <div class="field"><label>Support By <span class="req">*</span></label><select name="intSupportBy" id="intSupportBy" required><option value="">Select Support By</option></select></div>
             <div class="field"><label>Team Lead <span class="req">*</span></label><input type="text" name="intTeamLead" id="intTeamLead" placeholder="Auto-filled from selection" readonly required/></div>
             <div class="field"><label>Manager <span class="req">*</span></label><input type="text" name="intManager" id="intManager" placeholder="Auto-filled from selection" value="Harsh Patel" readonly required/></div>
+            <div class="field"><label style="display:flex;align-items:center;gap:.55rem;text-transform:none;letter-spacing:.02em;font-size:.8rem;"><input type="checkbox" id="intSupportManualEdit" style="width:auto;min-height:auto;margin:0;" /> Edit Team Lead / Manager manually</label></div>
           </div>
         </div>
       </div>
@@ -3677,6 +3678,7 @@ window.addEventListener('DOMContentLoaded', function() {
   var supportSelect = document.getElementById('intSupportBy');
   var teamLeadInput = document.getElementById('intTeamLead');
   var managerInput = document.getElementById('intManager');
+  var manualEditToggle = document.getElementById('intSupportManualEdit');
   var orgStructure = {
     manager: 'Harsh Patel',
     assistantManager: 'Rujuwal Garg',
@@ -3721,7 +3723,7 @@ window.addEventListener('DOMContentLoaded', function() {
   };
   var memberToLead = {};
 
-  if (!supportSelect || !teamLeadInput || !managerInput) return;
+  if (!supportSelect || !teamLeadInput || !managerInput || !manualEditToggle) return;
 
   Object.keys(orgStructure.teamLeads).forEach(function(teamLead) {
     var optgroup = document.createElement('optgroup');
@@ -3737,13 +3739,27 @@ window.addEventListener('DOMContentLoaded', function() {
     supportSelect.appendChild(optgroup);
   });
 
+  function applyManualEditState() {
+    var isManual = !!manualEditToggle.checked;
+    teamLeadInput.readOnly = !isManual;
+    managerInput.readOnly = !isManual;
+    teamLeadInput.placeholder = isManual ? 'Enter Team Lead' : 'Auto-filled from selection';
+    managerInput.placeholder = isManual ? 'Enter Manager' : 'Auto-filled from selection';
+  }
+
   function syncInterviewSupportFields() {
+    if (manualEditToggle.checked) return;
     var selected = supportSelect.value;
     teamLeadInput.value = memberToLead[selected] || '';
     managerInput.value = selected ? orgStructure.manager : 'Harsh Patel';
   }
 
   supportSelect.addEventListener('change', syncInterviewSupportFields);
+  manualEditToggle.addEventListener('change', function() {
+    applyManualEditState();
+    syncInterviewSupportFields();
+  });
+  applyManualEditState();
   syncInterviewSupportFields();
 });
 
