@@ -3077,6 +3077,23 @@ function g(name) {
   return all[0] ? (all[0].value || '') : '';
 }
 
+function escapeDocHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatDocMultiline(value) {
+  return escapeDocHtml(value)
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n/g, '<br/>')
+    .replace(/  /g, '&nbsp;&nbsp;')
+    .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+}
+
 const B  = 'border:1px solid #000;';
 const F  = 'font-size:10pt;font-family:Arial,sans-serif;';
 const P  = 'padding:3pt 5pt;';
@@ -3255,7 +3272,7 @@ function downloadAsDoc() {
     <td colspan="3" style="${sPlain} font-weight:bold;">&nbsp;Job Description</td>
   </tr>
   <tr>
-    <td colspan="3" style="${sPlain} height:60pt; vertical-align:top;">${d.jobDesc}</td>
+    <td colspan="3" style="${sPlain} height:60pt; vertical-align:top; white-space:pre-wrap; line-height:1.45;">${formatDocMultiline(d.jobDesc)}</td>
   </tr>
 </table>`;
 
