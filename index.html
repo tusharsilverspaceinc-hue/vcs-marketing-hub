@@ -2328,6 +2328,7 @@ input.date-invalid {
       <div class="field">
         <label>Job Description <span class="req">*</span></label>
         <textarea name="jobDescription" placeholder="Enter job description..." style="min-height:110px" required></textarea>
+        <input type="hidden" name="jobDescriptionHtml" value="">
       </div>
     </div>
 
@@ -3085,6 +3086,54 @@ function escapeDocHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+function sanitizeDocHtml(value) {
+  const source = String(value == null ? '' : value).trim();
+  if (!source) return '';
+  const parser = new DOMParser();
+  const doc = parser.parseFromString('<div>' + source + '</div>', 'text/html');
+  const allowed = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'EM', 'I', 'U', 'SPAN', 'DIV']);
+
+  function cleanNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent || '');
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return document.createTextNode('');
+    }
+
+    const tag = node.tagName.toUpperCase();
+    if (!allowed.has(tag)) {
+      const fragment = document.createDocumentFragment();
+      Array.from(node.childNodes).forEach(function(child) {
+        fragment.appendChild(cleanNode(child));
+      });
+      return fragment;
+    }
+
+    const el = document.createElement(tag.toLowerCase());
+    if (tag === 'UL' || tag === 'OL') {
+      el.style.margin = '0 0 8pt 18pt';
+      el.style.padding = '0';
+    }
+    if (tag === 'LI') {
+      el.style.margin = '0 0 4pt 0';
+    }
+    if (tag === 'P' || tag === 'DIV') {
+      el.style.margin = '0 0 8pt 0';
+    }
+    Array.from(node.childNodes).forEach(function(child) {
+      el.appendChild(cleanNode(child));
+    });
+    return el;
+  }
+
+  const wrapper = document.createElement('div');
+  Array.from(doc.body.firstChild ? doc.body.firstChild.childNodes : []).forEach(function(child) {
+    wrapper.appendChild(cleanNode(child));
+  });
+  return wrapper.innerHTML.trim();
+}
+
 function formatDocMultiline(value) {
   return escapeDocHtml(value)
     .replace(/\r\n/g, '\n')
@@ -3226,6 +3275,7 @@ function downloadAsDoc() {
     joiningDate:  (document.getElementById('joiningAfterBGC') && document.getElementById('joiningAfterBGC').checked) ? 'After BGC' : fmtDate(g('joiningDate')),
     agreement:    g('agreement'),
     jobDesc:      g('jobDescription'),
+    jobDescHtml:  g('jobDescriptionHtml')
   };
 
   const table = `
@@ -3272,7 +3322,7 @@ function downloadAsDoc() {
     <td colspan="3" style="${sPlain} font-weight:bold;">&nbsp;Job Description</td>
   </tr>
   <tr>
-    <td colspan="3" style="${sPlain} height:60pt; vertical-align:top; white-space:pre-wrap; line-height:1.45;">${formatDocMultiline(d.jobDesc)}</td>
+    <td colspan="3" style="${sPlain} height:60pt; vertical-align:top; white-space:pre-wrap; line-height:1.45;">${sanitizeDocHtml(d.jobDescHtml) || formatDocMultiline(d.jobDesc)}</td>
   </tr>
 </table>`;
 
@@ -3578,6 +3628,51 @@ window.addEventListener('DOMContentLoaded', function(){
 
 
 /* ── Page Tab Switching ── */
+window.addEventListener('DOMContentLoaded', function() {
+  var jobDesc = document.querySelector('textarea[name="jobDescription"]');
+  var jobDescHtml = document.querySelector('input[name="jobDescriptionHtml"]');
+
+  if (!jobDesc || !jobDescHtml) return;
+
+  function normalizePlainText(value) {
+    return String(value || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  }
+
+  jobDesc.addEventListener('paste', function(event) {
+    var clipboard = event.clipboardData || window.clipboardData;
+    var html = clipboard ? clipboard.getData('text/html') : '';
+    var text = clipboard ? clipboard.getData('text/plain') : '';
+    var normalizedText = normalizePlainText(text);
+
+    if (!html) {
+      jobDescHtml.value = '';
+      jobDesc.dataset.richSourceText = normalizedText;
+      return;
+    }
+
+    event.preventDefault();
+    jobDesc.value = normalizedText;
+    jobDescHtml.value = html;
+    jobDesc.dataset.richSourceText = normalizedText;
+  });
+
+  jobDesc.addEventListener('input', function() {
+    var currentText = normalizePlainText(jobDesc.value);
+    var richSourceText = normalizePlainText(jobDesc.dataset.richSourceText || '');
+
+    if (!currentText) {
+      jobDescHtml.value = '';
+      jobDesc.dataset.richSourceText = '';
+      return;
+    }
+
+    if (jobDescHtml.value && currentText !== richSourceText) {
+      jobDescHtml.value = '';
+      jobDesc.dataset.richSourceText = '';
+    }
+  });
+});
+
 function switchTab(tab) {
   var bsrWrap   = document.getElementById('bsr-frame-wrap');
   var appWrap   = document.getElementById('app-frame-wrap');
