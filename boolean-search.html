@@ -2163,12 +2163,14 @@ const generators = {
   // ── 8. Google X-Ray Jobs: site:linkedin.com/jobs/ + full boolean
   'googlexray': () => {
     const core     = assembleString('', 'google');
+    const selectedState = document.getElementById('stateSelect').value;
+    const usGeo = selectedState ? `("${selectedState}" OR "United States" OR USA)` : '("United States" OR USA)';
     const fresh    = document.getElementById('freshnessSelect') ? document.getElementById('freshnessSelect').value : '';
     const afterDate = getGoogleAfterDate ? getGoogleAfterDate() : '';
     let dateStr = '';
     if (afterDate) dateStr = ' after:' + afterDate;
     else if (fresh) dateStr = ' after:' + fresh.replace('past ','').replace(' ','+');
-    return 'site:linkedin.com/jobs/view/ ' + core + dateStr;
+    return `site:linkedin.com/jobs/view/ ${core} AND ${usGeo}${dateStr}`;
   },
 
 
