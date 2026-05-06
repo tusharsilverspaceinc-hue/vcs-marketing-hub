@@ -2034,16 +2034,17 @@ function buildLinkedInLooseMisc() {
 
 function buildLinkedInString() {
   const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).slice(0, 3).map(quoteIfNeeded);
-  const skillTerms = uniqueTerms([...tags.must, ...tags.any]).slice(0, 3).map(quoteIfNeeded);
+  const skillTerms = uniqueTerms([...tags.must, ...tags.any]).slice(0, 2).map(quoteIfNeeded);
   const locTerms = buildLinkedInLooseLocation();
   const companyTerms = buildLinkedInLooseCompany();
   const miscTerms = buildLinkedInLooseMisc();
+  const excludeTerms = uniqueTerms(tags.exclude || []).slice(0, 1).map(quoteIfNeeded);
 
   let parts = [];
 
   if (titleTerms.length > 1) parts.push(`(${titleTerms.join(' OR ')})`);
   else if (titleTerms.length === 1) parts.push(titleTerms[0]);
-  else if (skillTerms.length > 1) parts.push(`(${skillTerms.join(' OR ')})`);
+  if (skillTerms.length > 1) parts.push(`(${skillTerms.join(' OR ')})`);
   else if (skillTerms.length === 1) parts.push(skillTerms[0]);
 
   parts = parts
@@ -2051,7 +2052,9 @@ function buildLinkedInString() {
     .concat(companyTerms.slice(0, 1))
     .concat(miscTerms.slice(0, 2));
 
-  return parts.filter(Boolean).join(' ').trim();
+  let query = parts.filter(Boolean).join(' AND ').trim();
+  if (excludeTerms.length) query += (query ? ' ' : '') + ` NOT ${excludeTerms[0]}`;
+  return query.trim();
 }
 // Helper: get must-have skills as simple space-joined string
 function getMustSkillsSimple() {
@@ -2176,7 +2179,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'Universal LinkedIn query: title-first, very light operators, and loose quoted filters so the copied text works more reliably across LinkedIn search boxes.' },
+  }, tip:'LinkedIn query includes title, up to 2 skills, location, and light advanced filters. Date posted still applies through Search Now URL filters.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
