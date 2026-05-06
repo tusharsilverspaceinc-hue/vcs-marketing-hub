@@ -1979,6 +1979,37 @@ function getPrimaryTitle() {
   const t = (document.getElementById('primaryTitle').value || '').trim();
   return t;
 }
+
+function quoteIfNeeded(term) {
+  return term.includes(' ') ? `"${term}"` : term;
+}
+
+function uniqueTerms(items) {
+  return [...new Set(items.filter(Boolean).map(s => s.trim()).filter(Boolean))];
+}
+
+function buildLinkedInString() {
+  const primary = getPrimaryTitle();
+  const titles = uniqueTerms([primary, ...tags.title]).slice(0, 3).map(quoteIfNeeded);
+  const supportTerms = uniqueTerms([...tags.must, ...tags.any]).slice(0, 2).map(quoteIfNeeded);
+  const excludes = uniqueTerms(tags.exclude).slice(0, 2).map(quoteIfNeeded);
+  const visa = buildVisaBlock();
+
+  let parts = [];
+
+  if (titles.length > 1) parts.push(`(${titles.join(' OR ')})`);
+  else if (titles.length === 1) parts.push(titles[0]);
+
+  if (supportTerms.length > 1) parts.push(`(${supportTerms.join(' OR ')})`);
+  else if (supportTerms.length === 1) parts.push(supportTerms[0]);
+
+  if (visa) parts.push(visa);
+
+  let query = parts.join(' AND ');
+  if (excludes.length) query += (query ? ' ' : '') + excludes.map(term => `NOT ${term}`).join(' ');
+
+  return query.trim();
+}
 // Helper: get must-have skills as simple space-joined string
 function getMustSkillsSimple() {
   const vals = [...document.querySelectorAll('#mustTagWrap .tag')].map(el=>el.firstChild?.textContent?.trim()||'').filter(Boolean);
@@ -1988,7 +2019,7 @@ function getMustSkillsSimple() {
 const generators = {
 
   // ── 1. LinkedIn: Full boolean, AND/OR/NOT, quotes, up to 1000 chars
-  'linkedin': () => assembleString('', 'linkedin'),
+  'linkedin': () => buildLinkedInString(),
 
   // ── 2. Glassdoor: Quotes + OR supported; avoid deep nesting
   'glassdoor': () => {
@@ -2102,7 +2133,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'Full boolean: AND / OR / NOT + "quotes". Up to 1000 chars. Best for recruiter sourcing.' },
+  }, tip:'Lean LinkedIn Jobs query: fewer operators, 2-3 title variants, and 1-2 support skills for broader consumer-search results.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
@@ -2172,7 +2203,7 @@ function calcQuality(str) {
 
 // ── LIVE PREVIEW ─────────────────────────────────────────
 function updatePreview() {
-  const str = assembleString('', 'linkedin');
+  const str = generators.linkedin();
   const el  = document.getElementById('previewStr');
   const pill= document.getElementById('charPill');
   const bar = document.getElementById('qualityBar');
@@ -2191,7 +2222,7 @@ function updatePreview() {
 }
 
 function copyPreview() {
-  const str = assembleString('', 'linkedin');
+  const str = generators.linkedin();
   if (!str) { showToast('Nothing to copy yet'); return; }
   navigator.clipboard.writeText(str).then(() => showToast('Preview copied'));
 }
