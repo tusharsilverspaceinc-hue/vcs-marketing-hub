@@ -2041,7 +2041,7 @@ function buildLinkedInLooseSkills() {
 }
 
 function buildLinkedInString() {
-  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).slice(0, 3).map(quoteIfNeeded);
+  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).slice(0, 8).map(quoteIfNeeded);
   const skillTerms = buildLinkedInLooseSkills();
   const locTerms = buildLinkedInLooseLocation();
   const companyTerms = buildLinkedInLooseCompany();
