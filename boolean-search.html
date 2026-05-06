@@ -2029,12 +2029,20 @@ function buildLinkedInLooseCompany() {
 function buildLinkedInLooseMisc() {
   const industry = uniqueTerms(tags.industry || []).slice(0, 2).map(quoteIfNeeded);
   const empType = getChecked('#empGroup input').slice(0, 2).map(quoteIfNeeded);
-  return [...industry, ...empType];
+  const exp = parseInt(document.getElementById('expRange').value, 10);
+  const expTerms = exp > 0 ? [`"${exp} years"`] : [];
+  return [...industry, ...empType, ...expTerms];
+}
+
+function buildLinkedInLooseSkills() {
+  const mustTerms = uniqueTerms(tags.must || []).slice(0, 2).map(quoteIfNeeded);
+  if (mustTerms.length) return mustTerms;
+  return uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
 }
 
 function buildLinkedInString() {
   const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).slice(0, 3).map(quoteIfNeeded);
-  const skillTerms = uniqueTerms([...tags.must, ...tags.any]).slice(0, 2).map(quoteIfNeeded);
+  const skillTerms = buildLinkedInLooseSkills();
   const locTerms = buildLinkedInLooseLocation();
   const companyTerms = buildLinkedInLooseCompany();
   const miscTerms = buildLinkedInLooseMisc();
