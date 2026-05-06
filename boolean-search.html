@@ -2134,15 +2134,28 @@ const platformMeta = {
 
 // ── HIGHLIGHT ────────────────────────────────────────────
 function highlight(str) {
-  const AND = getOp('AND'), OR = getOp('OR'), NOT = getOp('NOT');
-  return str
-    .replace(new RegExp(`\\b${AND}\\b`,'g'), `<span class="op-and">${AND}</span>`)
-    .replace(new RegExp(`\\b${OR}\\b`,'g'),  `<span class="op-or">${OR}</span>`)
-    .replace(new RegExp(`\\b${NOT}\\b`,'g'), `<span class="op-not">${NOT}</span>`)
-    .replace(/site:[^\s]+/g,  m => `<span class="op-site">${m}</span>`)
-    .replace(/[""]([^""]+)[""]/g, m => `<span class="op-qt">${m}</span>`)
-    .replace(/[()]/g, m => `<span class="op-par">${m}</span>`)
-    .replace(/#\w+/g, m => `<span style="color:#818cf8">${m}</span>`);
+  const tokenRe = /site:[^\s]+|"(?:[^"\\]|\\.)*"|#\w+|\(|\)|\bAND\b|\bOR\b|\bNOT\b/g;
+  let out = '';
+  let lastIndex = 0;
+
+  for (const match of str.matchAll(tokenRe)) {
+    const token = match[0];
+    const index = match.index ?? 0;
+    out += escHtml(str.slice(lastIndex, index));
+
+    if (token === 'AND') out += `<span class="op-and">${token}</span>`;
+    else if (token === 'OR') out += `<span class="op-or">${token}</span>`;
+    else if (token === 'NOT') out += `<span class="op-not">${token}</span>`;
+    else if (token.startsWith('site:')) out += `<span class="op-site">${escHtml(token)}</span>`;
+    else if (token === '(' || token === ')') out += `<span class="op-par">${token}</span>`;
+    else if (token.startsWith('#')) out += `<span style="color:#818cf8">${escHtml(token)}</span>`;
+    else out += `<span class="op-qt">${escHtml(token)}</span>`;
+
+    lastIndex = index + token.length;
+  }
+
+  out += escHtml(str.slice(lastIndex));
+  return out;
 }
 
 // ── QUALITY SCORE ────────────────────────────────────────
@@ -2228,6 +2241,7 @@ function generateAll() {
       <div class="bool-string" id="str-${platform}">${str ? highlight(str) : '<span class="placeholder">Fill in the form and click Generate...</span>'}</div>
       <div class="panel-tip">${meta.tip}</div>
     `;
+    panel.querySelector(`#str-${platform}`)?.setAttribute('data-raw', str);
     panelsEl.appendChild(panel);
   });
 
@@ -2243,7 +2257,8 @@ function switchTab(platform) {
 }
 
 function copyPanel(platform) {
-  const raw = document.getElementById(`str-${platform}`).textContent;
+  const el = document.getElementById(`str-${platform}`);
+  const raw = el?.getAttribute('data-raw') || el?.textContent || '';
   const btn = document.getElementById(`copyBtn-${platform}`);
   navigator.clipboard.writeText(raw).then(() => {
     btn.textContent = 'Copied';
