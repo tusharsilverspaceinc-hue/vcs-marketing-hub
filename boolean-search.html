@@ -1832,9 +1832,10 @@ function buildLocationBlock(platform='linkedin') {
   const remote  = document.getElementById('remoteCheck').checked;
   const hybrid  = document.getElementById('hybridCheck').checked;
   const onsite  = document.getElementById('onsiteCheck').checked;
+  const includeStateInKeywords = platform === 'linkedin-keywords';
 
   let parts = [];
-  if (state && platform !== 'linkedin') parts.push(`"${state}"`);
+  if (state && (platform !== 'linkedin' || includeStateInKeywords)) parts.push(`"${state}"`);
 
   let arr = [];
   if (remote) arr.push('Remote');
@@ -1905,6 +1906,27 @@ function buildMiscBlock() {
   if (exp > 0) parts.push(`"${exp}+ years"`);
 
   return parts.join(' ' + getOp('AND') + ' ');
+}
+
+function buildLinkedInMiscBlock() {
+  const empType  = getChecked('#empGroup input');
+  const industry = tags.industry;
+  const exp      = parseInt(document.getElementById('expRange').value, 10);
+  let parts = [];
+
+  if (industry.length) {
+    const indStr = industry.map(i => `"${i}"`).join(' OR ');
+    parts.push(industry.length > 1 ? `(${indStr})` : indStr);
+  }
+
+  if (empType.length) {
+    const empStr = empType.map(e => quoteIfNeeded(e)).join(' OR ');
+    parts.push(empType.length > 1 ? `(${empStr})` : empStr);
+  }
+
+  if (exp > 0) parts.push(`"${exp}+ years"`);
+
+  return parts.join(' AND ');
 }
 
 
@@ -1989,24 +2011,28 @@ function uniqueTerms(items) {
 }
 
 function buildLinkedInString() {
-  const primary = getPrimaryTitle();
-  const titles = uniqueTerms([primary, ...tags.title]).slice(0, 3).map(quoteIfNeeded);
-  const supportTerms = uniqueTerms([...tags.must, ...tags.any]).slice(0, 2).map(quoteIfNeeded);
-  const excludes = uniqueTerms(tags.exclude).slice(0, 2).map(quoteIfNeeded);
+  const title = buildTitleBlock();
+  const skills = buildSkillsBlock();
+  const loc = buildLocationBlock('linkedin-keywords');
+  const company = buildCompanyBlock();
   const visa = buildVisaBlock();
+  const misc = buildLinkedInMiscBlock();
+  const suffix = (document.getElementById('customSuffix').value || '').trim();
 
   let parts = [];
-
-  if (titles.length > 1) parts.push(`(${titles.join(' OR ')})`);
-  else if (titles.length === 1) parts.push(titles[0]);
-
-  if (supportTerms.length > 1) parts.push(`(${supportTerms.join(' OR ')})`);
-  else if (supportTerms.length === 1) parts.push(supportTerms[0]);
-
+  if (title) parts.push(title);
+  if (skills.include) parts.push(skills.include);
+  if (loc) parts.push(loc);
+  if (company.include) parts.push(company.include);
   if (visa) parts.push(visa);
+  if (misc) parts.push(misc);
 
   let query = parts.join(' AND ');
-  if (excludes.length) query += (query ? ' ' : '') + excludes.map(term => `NOT ${term}`).join(' ');
+  let excludeParts = [];
+  if (skills.exclude) excludeParts.push(skills.exclude);
+  if (company.exclude) excludeParts.push(company.exclude);
+  if (excludeParts.length) query += (query ? ' ' : '') + ' ' + excludeParts.join(' ');
+  if (suffix) query += (query ? ' ' : '') + suffix;
 
   return query.trim();
 }
