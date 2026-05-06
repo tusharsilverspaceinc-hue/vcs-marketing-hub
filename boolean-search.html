@@ -2048,19 +2048,25 @@ function buildLinkedInString() {
   const miscTerms = buildLinkedInLooseMisc();
   const excludeTerms = uniqueTerms(tags.exclude || []).slice(0, 1).map(quoteIfNeeded);
 
-  let parts = [];
+  let groups = [];
 
-  if (titleTerms.length > 1) parts.push(`(${titleTerms.join(' OR ')})`);
-  else if (titleTerms.length === 1) parts.push(titleTerms[0]);
-  if (skillTerms.length > 1) parts.push(`(${skillTerms.join(' OR ')})`);
-  else if (skillTerms.length === 1) parts.push(skillTerms[0]);
+  if (titleTerms.length > 1) groups.push(`(${titleTerms.join(' OR ')})`);
+  else if (titleTerms.length === 1) groups.push(titleTerms[0]);
 
-  parts = parts
-    .concat(locTerms.slice(0, 2))
-    .concat(companyTerms.slice(0, 1))
-    .concat(miscTerms.slice(0, 2));
+  if (skillTerms.length > 1) groups.push(`(${skillTerms.join(' OR ')})`);
+  else if (skillTerms.length === 1) groups.push(skillTerms[0]);
 
-  let query = parts.filter(Boolean).join(' AND ').trim();
+  const locGroup = locTerms.slice(0, 2);
+  if (locGroup.length > 1) groups.push(`(${locGroup.join(' OR ')})`);
+  else if (locGroup.length === 1) groups.push(locGroup[0]);
+
+  const filterTerms = companyTerms.slice(0, 1).concat(miscTerms.slice(0, 2));
+  if (filterTerms.length > 1) groups.push(`(${filterTerms.join(' OR ')})`);
+  else if (filterTerms.length === 1) groups.push(filterTerms[0]);
+
+  groups = groups.slice(0, 4);
+
+  let query = groups.filter(Boolean).join(' AND ').trim();
   if (excludeTerms.length) query += (query ? ' ' : '') + ` NOT ${excludeTerms[0]}`;
   return query.trim();
 }
@@ -2187,7 +2193,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'LinkedIn query includes title, up to 2 skills, location, and light advanced filters. Date posted still applies through Search Now URL filters.' },
+  }, tip:'Optimized for LinkedIn limits: 3-4 groups total, light AND usage, and OR groups kept compact. Date posted still applies through Search Now URL filters.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
