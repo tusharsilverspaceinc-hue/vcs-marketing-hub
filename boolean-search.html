@@ -2434,7 +2434,7 @@ function renderHiringPeopleCard() {
         <button class="btn-action" onclick="copyHiringStr('hiringLinkedInManagerStr')">Copy</button>
         <a class="btn-action search-btn" id="hiringLinkedInManagerLink" href="#" target="_blank" rel="noopener">LinkedIn People Search</a>
       </div>
-      <div class="hiring-tip">Uses LinkedIn-safe Boolean with only NOT exclusions. Location is now applied through the LinkedIn search link, so the copied string stays focused on people who are hiring for the role.</div>
+      <div class="hiring-tip">Uses a broader LinkedIn People query focused on hiring-side titles plus the target role. Location is applied through the LinkedIn search link so the copied string stays lighter and returns more results.</div>
     </div>
     <div id="hiringPeoplePanelGoogle" style="display:none;">
       <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Google X-Ray fallback</div>
@@ -2490,13 +2490,13 @@ function shrinkHiringParts(parts, limit) {
 
 function buildLinkedInHiringString(titleTerms, roleTerms, locationTerm, companyTerm) {
   return shrinkHiringParts({
-    titleTerms: [...titleTerms],
-    roleTerms: [...roleTerms],
-    titles: buildHiringOrGroup(titleTerms),
-    role: buildHiringOrGroup(roleTerms),
+    titleTerms: [...titleTerms].slice(0, 3),
+    roleTerms: [...roleTerms].slice(0, 2),
+    titles: buildHiringOrGroup(titleTerms.slice(0, 3)),
+    role: buildHiringOrGroup(roleTerms.slice(0, 2)),
     location: locationTerm,
     company: companyTerm,
-    notTerms: ['NOT "open to work"', 'NOT "job seeker"']
+    notTerms: []
   }, 220);
 }
 
