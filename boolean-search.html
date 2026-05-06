@@ -2564,7 +2564,15 @@ function generateHiringSearchV2() {
   const roleOR = buildHiringOrGroup([role, ...syns.slice(0, 3)]);
   const searchLocationTerm = state ? `"${state}"` : '"United States"';
   const companyTerm = company ? `"${company}"` : '';
-  const recruiterTitles = ['Recruiter', 'Technical Recruiter', 'Talent Acquisition', 'Talent Partner'];
+  const recruiterTitles = [
+    'Recruiter',
+    'Technical Recruiter',
+    'Talent Acquisition',
+    'Talent Partner',
+    'VP of Recruitment',
+    'Account Manager',
+    'Hiring Manager'
+  ];
   const managerTitles = ['Hiring Manager', 'Engineering Manager', 'Director', 'VP'];
   const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "open role")';
 
