@@ -2434,7 +2434,7 @@ function renderHiringPeopleCard() {
         <button class="btn-action" onclick="copyHiringStr('hiringLinkedInManagerStr')">Copy</button>
         <a class="btn-action search-btn" id="hiringLinkedInManagerLink" href="#" target="_blank" rel="noopener">LinkedIn People Search</a>
       </div>
-      <div class="hiring-tip">Uses a broader LinkedIn People query focused on hiring-side titles plus the target role. Location is applied through the LinkedIn search link so the copied string stays lighter and returns more results.</div>
+      <div class="hiring-tip">Uses a broader LinkedIn People query focused on hiring-side titles plus a light role signal. Location is applied through the LinkedIn search link so the copied string stays lighter and returns more results. For stronger role-specific intent, use LinkedIn Posts or Google X-Ray beside it.</div>
     </div>
     <div id="hiringPeoplePanelGoogle" style="display:none;">
       <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Google X-Ray fallback</div>
@@ -2468,6 +2468,32 @@ function buildHiringOrGroup(terms) {
   return '(' + terms.map(term => `"${term}"`).join(' OR ') + ')';
 }
 
+function buildHiringRoleSignal(role, syns = []) {
+  const stop = new Set([
+    'engineer','developer','analyst','manager','consultant','architect','administrator',
+    'lead','senior','junior','principal','staff','full','stack','software','technical',
+    'specialist','associate','master','quality','assurance','product','project'
+  ]);
+
+  const pool = [role, ...syns]
+    .join(' ')
+    .replace(/[/.()-]/g, ' ')
+    .split(/\s+/)
+    .map(token => token.trim())
+    .filter(Boolean);
+
+  const ranked = [];
+  for (const token of pool) {
+    const lower = token.toLowerCase();
+    if (stop.has(lower)) continue;
+    if (ranked.some(existing => existing.toLowerCase() === lower)) continue;
+    ranked.push(token);
+  }
+
+  if (ranked.length) return ranked.slice(0, 2);
+  return [role];
+}
+
 function buildHiringMetaHtml(str, limit) {
   const len = str.length;
   if (len <= 179) return `<span style="color:#22c55e;">✅ ${len} / ${limit} chars</span>`;
@@ -2491,9 +2517,9 @@ function shrinkHiringParts(parts, limit) {
 function buildLinkedInHiringString(titleTerms, roleTerms, locationTerm, companyTerm) {
   return shrinkHiringParts({
     titleTerms: [...titleTerms].slice(0, 3),
-    roleTerms: [...roleTerms].slice(0, 2),
+    roleTerms: [...roleTerms].slice(0, 1),
     titles: buildHiringOrGroup(titleTerms.slice(0, 3)),
-    role: buildHiringOrGroup(roleTerms.slice(0, 2)),
+    role: buildHiringOrGroup(roleTerms.slice(0, 1)),
     location: locationTerm,
     company: companyTerm,
     notTerms: []
@@ -2559,7 +2585,7 @@ function generateHiringSearchV2() {
   renderHiringPeopleCard();
 
   const syns = SYN[role] || [];
-  const roleTerms = [role, ...syns.slice(0, 1)];
+  const peopleRoleTerms = buildHiringRoleSignal(role, syns);
   const roleQ = `"${role}"`;
   const roleOR = buildHiringOrGroup([role, ...syns.slice(0, 3)]);
   const searchLocationTerm = state ? `"${state}"` : '"United States"';
@@ -2576,8 +2602,8 @@ function generateHiringSearchV2() {
   const managerTitles = ['Hiring Manager', 'Engineering Manager', 'Director', 'VP'];
   const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "open role")';
 
-  const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, roleTerms, '', companyTerm);
-  const linkedInManagerBool = buildLinkedInHiringString(managerTitles, roleTerms, '', companyTerm);
+  const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, peopleRoleTerms, '', companyTerm);
+  const linkedInManagerBool = buildLinkedInHiringString(managerTitles, peopleRoleTerms, '', companyTerm);
   const linkedInPostsBool = [
     roleOR,
     hiringPhraseGroup,
