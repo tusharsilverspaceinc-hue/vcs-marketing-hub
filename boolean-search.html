@@ -1011,7 +1011,7 @@ footer{max-width:1040px;margin:0 auto;border:1px solid rgba(20,162,226,.36);bord
     <!-- 2 · Skills -->
     <div class="card">
       <div class="card-head">
-        <div class="card-icon ci-violet">⚡</div>
+        <div class="card-icon ci-violet">+</div>
         <div>
           <div class="card-title">Skills & Keywords</div>
           <div class="card-desc">AND / OR / NOT logic per section</div>
@@ -1150,7 +1150,7 @@ footer{max-width:1040px;margin:0 auto;border:1px solid rgba(20,162,226,.36);bord
           <div class="plat-name">ZipRecruiter</div>
         </div>
         <div class="plat-btn active" data-platform="googlexray">
-          <div class="plat-logo" style="background:#4285f4;color:#fff;font-size:9px;font-weight:800">G⚡</div>
+          <div class="plat-logo" style="background:#4285f4;color:#fff;font-size:9px;font-weight:800">GX</div>
           <div class="plat-name">Google X-Ray</div>
           <div class="plat-tag">Jobs</div>
         </div>
@@ -1244,7 +1244,7 @@ footer{max-width:1040px;margin:0 auto;border:1px solid rgba(20,162,226,.36);bord
   <!-- GENERATE CTA -->
   <div class="generate-wrap">
     <button class="generate-cta" onclick="generateAll()">
-      ⚡ Generate Boolean Strings
+      Generate Boolean Strings
     </button>
   </div>
 
@@ -1846,7 +1846,17 @@ function buildLocationBlock(platform='linkedin') {
 }
 
 function buildCompanyBlock() {
-  return { include: '', exclude: '' };
+  const incVals = tags.company || [];
+  const exVals  = tags.exCompany || [];
+  const includeStr = incVals.length
+    ? (incVals.length > 1
+        ? '(' + incVals.map(c => c.includes(' ') ? '"'+c+'"' : c).join(' '+getOp('OR')+' ') + ')'
+        : (incVals[0].includes(' ') ? '"'+incVals[0]+'"' : incVals[0]))
+    : '';
+  const excludeStr = exVals.length
+    ? exVals.map(c => getOp('NOT')+' '+(c.includes(' ') ? '"'+c+'"' : c)).join(' ')
+    : '';
+  return { include: includeStr, exclude: excludeStr };
 }
 
 function buildEducationBlock() {
@@ -1873,22 +1883,28 @@ function buildVisaBlock() {
 }
 
 function buildMiscBlock() {
-  const empType = getChecked('#empGroup input');
-  const industry  = tags.industry;
-  const exp       = document.getElementById('expRange').value;
-
+  const empType  = getChecked('#empGroup input');
+  const industry = tags.industry;
+  const exp      = parseInt(document.getElementById('expRange').value, 10);
 
   let parts = [];
+
+  // Industry: always quote each term (handles multi-word like "Health Care")
   if (industry.length) {
-    const indStr = industry.join(' '+getOp('OR')+' ');
+    const indStr = industry.map(i => i.includes(' ') ? `"${i}"` : `"${i}"`).join(' ' + getOp('OR') + ' ');
     parts.push(useParens() ? `(${indStr})` : indStr);
   }
+
+  // Employment type
   if (empType.length) {
-    const et = empType.join(' '+getOp('OR')+' ');
+    const et = empType.map(e => e.includes(' ') ? `"${e}"` : e).join(' ' + getOp('OR') + ' ');
     parts.push(useParens() ? `(${et})` : et);
   }
+
+  // Experience (parseInt fixes string comparison bug)
   if (exp > 0) parts.push(`"${exp}+ years"`);
-  return parts.join(' '+getOp('AND')+' ');
+
+  return parts.join(' ' + getOp('AND') + ' ');
 }
 
 
@@ -1940,13 +1956,13 @@ function assembleString(extraPrefix='', platform='linkedin', options={}) {
 
   let parts = [];
   if (extraPrefix) parts.push(extraPrefix);
-  if (title)          parts.push(title);
-  if (skills.include) parts.push(skills.include);
-  if (loc)            parts.push(loc);
-  if (company.include)parts.push(company.include);
-  if (edu)            parts.push(edu);
-  if (visa)           parts.push(visa);
-  if (misc)           parts.push(misc);
+  if (title)           parts.push(title);
+  if (skills.include)  parts.push(skills.include);
+  if (loc)             parts.push(loc);
+  if (company.include) parts.push(company.include);
+  if (edu)             parts.push(edu);
+  if (visa)            parts.push(visa);
+  if (misc)            parts.push(misc);
 
   let mainStr = parts.join(' '+getOp('AND')+' ');
   let excParts = [];
@@ -2333,11 +2349,11 @@ function generateHiringSearch() {
   const roleQ   = '"' + role + '"';
   // Role OR group — primary + up to 2 synonyms
   const roleOR  = syns.length
-    ? '(' + [role,...syns.slice(0,2)].map(r => '"'+r+'"').join(' OR ') + ')'
+    ? '(' + [role,...syns.slice(0,4)].map(r => '"'+r+'"').join(' OR ') + ')'
     : roleQ;
 
-  const stateStr = state   ? ' "' + state + '"' : '';
-  const coStr    = company ? ' "' + company + '"' : '';
+  const stateStr = state   ? '"' + state + '"' : '';
+  const coStr    = company ? '"' + company + '"' : '';
   const usOr     = state   ? '("' + state + '" OR "United States")' : '"United States"';
   const usFull   = '"United States"';
 
@@ -2353,7 +2369,7 @@ function generateHiringSearch() {
     '("United States" OR "USA")',
     stateStr,
     coStr
-  ].filter(Boolean).join(' ');
+  ].filter(Boolean).join(' AND ');
 
   // ════════════════════════════════════════════════════════════════
   // 2. LinkedIn POSTS SEARCH (Feed content search)
@@ -2366,8 +2382,8 @@ function generateHiringSearch() {
     '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring now" OR "I am hiring" OR "looking to hire" OR "join our team" OR "open role")',
     usOr,
     coStr,
-    '-"apply on indeed" -"via indeed" -"job description" -"apply here"'
-  ].filter(Boolean).join(' ');
+    'AND NOT "apply on indeed" AND NOT "via indeed" AND NOT "job description" AND NOT "apply here"'
+  ].filter(Boolean).join(' AND ');
 
   // ════════════════════════════════════════════════════════════════
   // 3. GOOGLE WEB SEARCH
@@ -2376,7 +2392,7 @@ function generateHiringSearch() {
   //    intitle: finds pages where the role is in the page title
   // ════════════════════════════════════════════════════════════════
   const googleBool = [
-    'intitle:(' + role.split(' ').map(w=>'"'+w+'"').join(' OR ') + ')',
+    'intitle:"' + role + '"',
     '("we are hiring" OR "now hiring" OR "job opening" OR "open position" OR "immediately hiring" OR "join our team")',
     usFull,
     stateStr,
