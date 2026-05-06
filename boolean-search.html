@@ -2007,32 +2007,51 @@ function uniqueTerms(items) {
   return [...new Set(items.filter(Boolean).map(s => s.trim()).filter(Boolean))];
 }
 
+function buildLinkedInLooseLocation() {
+  const state = document.getElementById('stateSelect').value;
+  const remote = document.getElementById('remoteCheck').checked;
+  const hybrid = document.getElementById('hybridCheck').checked;
+  const onsite = document.getElementById('onsiteCheck').checked;
+  const terms = [];
+
+  if (state) terms.push(`"${state}"`);
+  if (remote) terms.push('"Remote"');
+  if (hybrid) terms.push('"Hybrid"');
+  if (onsite) terms.push('"On-site"');
+
+  return terms;
+}
+
+function buildLinkedInLooseCompany() {
+  return uniqueTerms(tags.company || []).slice(0, 2).map(quoteIfNeeded);
+}
+
+function buildLinkedInLooseMisc() {
+  const industry = uniqueTerms(tags.industry || []).slice(0, 2).map(quoteIfNeeded);
+  const empType = getChecked('#empGroup input').slice(0, 2).map(quoteIfNeeded);
+  return [...industry, ...empType];
+}
+
 function buildLinkedInString() {
-  const title = buildTitleBlock();
-  const skills = buildSkillsBlock();
-  const loc = buildLocationBlock('linkedin-keywords');
-  const company = buildCompanyBlock();
-  const visa = buildVisaBlock();
-  const misc = buildLinkedInMiscBlock();
-  const suffix = (document.getElementById('customSuffix').value || '').trim();
-  const includeSkills = !title && skills.include;
+  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).slice(0, 3).map(quoteIfNeeded);
+  const skillTerms = uniqueTerms([...tags.must, ...tags.any]).slice(0, 3).map(quoteIfNeeded);
+  const locTerms = buildLinkedInLooseLocation();
+  const companyTerms = buildLinkedInLooseCompany();
+  const miscTerms = buildLinkedInLooseMisc();
 
   let parts = [];
-  if (title) parts.push(title);
-  if (includeSkills) parts.push(skills.include);
-  if (loc) parts.push(loc);
-  if (company.include) parts.push(company.include);
-  if (visa) parts.push(visa);
-  if (misc) parts.push(misc);
 
-  let query = parts.join(' AND ');
-  let excludeParts = [];
-  if (skills.exclude) excludeParts.push(skills.exclude);
-  if (company.exclude) excludeParts.push(company.exclude);
-  if (excludeParts.length) query += (query ? ' ' : '') + ' ' + excludeParts.join(' ');
-  if (suffix) query += (query ? ' ' : '') + suffix;
+  if (titleTerms.length > 1) parts.push(`(${titleTerms.join(' OR ')})`);
+  else if (titleTerms.length === 1) parts.push(titleTerms[0]);
+  else if (skillTerms.length > 1) parts.push(`(${skillTerms.join(' OR ')})`);
+  else if (skillTerms.length === 1) parts.push(skillTerms[0]);
 
-  return query.trim();
+  parts = parts
+    .concat(locTerms.slice(0, 2))
+    .concat(companyTerms.slice(0, 1))
+    .concat(miscTerms.slice(0, 2));
+
+  return parts.filter(Boolean).join(' ').trim();
 }
 // Helper: get must-have skills as simple space-joined string
 function getMustSkillsSimple() {
@@ -2157,7 +2176,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'LinkedIn Jobs works best with a clean title-first query. When a title is present, skill keywords are left out of the copied string to avoid over-filtering.' },
+  }, tip:'Universal LinkedIn query: title-first, very light operators, and loose quoted filters so the copied text works more reliably across LinkedIn search boxes.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
