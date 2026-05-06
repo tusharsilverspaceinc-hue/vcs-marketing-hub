@@ -1395,7 +1395,7 @@ footer{max-width:1040px;margin:0 auto;border:1px solid rgba(20,162,226,.36);bord
     <div class="hiring-results" id="hiringResults">
 
       <!-- LinkedIn People Search -->
-      <div class="hiring-result-card" style="margin-top:4px;">
+      <div class="hiring-result-card" id="hiringPeopleCard" style="margin-top:4px;">
         <div class="hiring-result-header">
           <div class="hiring-platform-badge">in LinkedIn · People Search</div>
           <span style="font-size:12px;color:var(--ink-muted);font-family:var(--f-body);">Find recruiters &amp; hiring managers by title</span>
@@ -2385,6 +2385,7 @@ document.querySelectorAll('input[type="checkbox"],input[type="radio"],select')
 
 // Init preview
 updatePreview();
+renderHiringPeopleCard();
 
 // ── FIND PEOPLE HIRING ────────────────────────────────────────────────────
 
@@ -2404,7 +2405,238 @@ function clearHiringManual() {
   document.getElementById('hiringManualRow').style.display = 'none';
 }
 
+function renderHiringPeopleCard() {
+  const card = document.getElementById('hiringPeopleCard');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="hiring-result-header">
+      <div class="hiring-platform-badge">People Hiring Search</div>
+      <span style="font-size:12px;color:var(--ink-muted);font-family:var(--f-body);">Two LinkedIn People strings + one Google X-Ray fallback</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="btn-action copy-active" id="hiringPeopleTabLinkedIn" onclick="switchHiringPeopleTab('linkedin')" style="cursor:pointer;">in LinkedIn</button>
+      <button class="btn-action" id="hiringPeopleTabGoogle" onclick="switchHiringPeopleTab('google')" style="cursor:pointer;">G+in Google X-Ray</button>
+    </div>
+    <div id="hiringPeoplePanelLinkedIn">
+      <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Recruiter-focused string</div>
+      <div class="hiring-bool-string" id="hiringLinkedInRecruiterStr"></div>
+      <div id="hiringLinkedInRecruiterMeta" style="font-size:12px;margin-top:8px;margin-bottom:10px;"></div>
+      <div class="hiring-actions" style="margin-bottom:16px;">
+        <button class="btn-action" onclick="copyHiringStr('hiringLinkedInRecruiterStr')">Copy</button>
+        <a class="btn-action search-btn" id="hiringLinkedInRecruiterLink" href="#" target="_blank" rel="noopener">LinkedIn People Search</a>
+      </div>
+      <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Hiring manager-focused string</div>
+      <div class="hiring-bool-string" id="hiringLinkedInManagerStr"></div>
+      <div id="hiringLinkedInManagerMeta" style="font-size:12px;margin-top:8px;margin-bottom:10px;"></div>
+      <div class="hiring-actions">
+        <button class="btn-action" onclick="copyHiringStr('hiringLinkedInManagerStr')">Copy</button>
+        <a class="btn-action search-btn" id="hiringLinkedInManagerLink" href="#" target="_blank" rel="noopener">LinkedIn People Search</a>
+      </div>
+      <div class="hiring-tip">Uses LinkedIn-safe Boolean with only NOT exclusions. If a state is selected, keep the string short and apply the location filter inside LinkedIn after opening the results.</div>
+    </div>
+    <div id="hiringPeoplePanelGoogle" style="display:none;">
+      <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Google X-Ray fallback</div>
+      <div class="hiring-bool-string" id="hiringPeopleXRayStr"></div>
+      <div id="hiringPeopleXRayMeta" style="font-size:12px;margin-top:8px;margin-bottom:10px;"></div>
+      <div class="hiring-actions">
+        <button class="btn-action" onclick="copyHiringStr('hiringPeopleXRayStr')">Copy</button>
+        <a class="btn-action search-btn" id="hiringPeopleXRayLink" href="#" target="_blank" rel="noopener" style="background:rgba(16,185,129,0.1);color:#10b981;border-color:rgba(16,185,129,0.3);">Google X-Ray Search</a>
+      </div>
+      <div class="hiring-tip">Google supports minus exclusions, so this fallback uses site:linkedin.com/in with -"open to work" and -"job seeker".</div>
+    </div>
+  `;
+}
+
+function switchHiringPeopleTab(tab) {
+  const linkedInPanel = document.getElementById('hiringPeoplePanelLinkedIn');
+  const googlePanel = document.getElementById('hiringPeoplePanelGoogle');
+  const linkedInTab = document.getElementById('hiringPeopleTabLinkedIn');
+  const googleTab = document.getElementById('hiringPeopleTabGoogle');
+  if (!linkedInPanel || !googlePanel || !linkedInTab || !googleTab) return;
+  const showLinkedIn = tab !== 'google';
+  linkedInPanel.style.display = showLinkedIn ? 'block' : 'none';
+  googlePanel.style.display = showLinkedIn ? 'none' : 'block';
+  linkedInTab.classList.toggle('copy-active', showLinkedIn);
+  googleTab.classList.toggle('copy-active', !showLinkedIn);
+}
+
+function buildHiringOrGroup(terms) {
+  if (!terms.length) return '';
+  if (terms.length === 1) return `"${terms[0]}"`;
+  return '(' + terms.map(term => `"${term}"`).join(' OR ') + ')';
+}
+
+function buildHiringMetaHtml(str, limit) {
+  const len = str.length;
+  if (len <= 179) return `<span style="color:#22c55e;">✅ ${len} / ${limit} chars</span>`;
+  if (len <= limit) return `<span style="color:#f59e0b;">⚠️ ${len} / ${limit} chars</span>`;
+  return `<span style="color:#ef4444;">❌ ${len} / ${limit} chars</span>`;
+}
+
+function shrinkHiringParts(parts, limit) {
+  const working = { ...parts };
+  while ([working.titles, working.role, working.location, working.company].filter(Boolean).concat(working.notTerms).join(' AND ').length > limit) {
+    if (working.company) { working.company = ''; continue; }
+    if (working.location) { working.location = ''; continue; }
+    if (working.roleTerms.length > 1) { working.roleTerms.pop(); working.role = buildHiringOrGroup(working.roleTerms); continue; }
+    if (working.titleTerms.length > 3) { working.titleTerms.pop(); working.titles = buildHiringOrGroup(working.titleTerms); continue; }
+    if (working.titleTerms.length > 1) { working.titleTerms.pop(); working.titles = buildHiringOrGroup(working.titleTerms); continue; }
+    break;
+  }
+  return [working.titles, working.role, working.location, working.company].filter(Boolean).concat(working.notTerms).join(' AND ');
+}
+
+function buildLinkedInHiringString(titleTerms, roleTerms, locationTerm, companyTerm) {
+  return shrinkHiringParts({
+    titleTerms: [...titleTerms],
+    roleTerms: [...roleTerms],
+    titles: buildHiringOrGroup(titleTerms),
+    role: buildHiringOrGroup(roleTerms),
+    location: locationTerm,
+    company: companyTerm,
+    notTerms: ['NOT "open to work"', 'NOT "job seeker"']
+  }, 220);
+}
+
+function generateHiringSearchV2() {
+  const sel = document.getElementById('hiringRoleSelect');
+  const stateEl = document.getElementById('hiringStateSelect');
+  const manualEl = document.getElementById('hiringManualInput');
+  const companyEl = document.getElementById('hiringCompanyInput');
+
+  let role = sel.value;
+  if (role === '__manual__') role = manualEl.value.trim();
+  if (!role) { showToast('\u26a0 Please select or type a role first'); return; }
+
+  const state = stateEl ? stateEl.value.trim() : '';
+  const company = companyEl ? companyEl.value.trim() : '';
+
+  const SYN = {
+    'Java Developer':['Java Engineer','Java Programmer','Java Software Engineer'],
+    'Python Engineer':['Python Developer','Python Programmer'],
+    '.Net Developer':['.NET Engineer','C# Developer','Dot Net Developer'],
+    'React Developer':['React.js Developer','React Engineer','Frontend Developer'],
+    'Node.js Developer':['NodeJS Developer','Node Developer','Backend Node Developer'],
+    'Full Stack Developer':['Full Stack Engineer','Fullstack Developer'],
+    'Full Stack Engineer':['Full Stack Developer','Fullstack Engineer'],
+    'Software Developer':['Software Engineer','Application Developer'],
+    'Software Engineer':['Software Developer','SWE','Application Engineer'],
+    'DevOps Engineer':['Platform Engineer','Infrastructure Engineer','DevOps'],
+    'Data Scientist':['Machine Learning Scientist','Data Science Engineer'],
+    'Data Analyst':['BI Analyst','Analytics Engineer','Business Intelligence Analyst'],
+    'Data Engineer':['Data Platform Engineer','Analytics Engineer','Big Data Engineer'],
+    'ML Engineer':['Machine Learning Engineer','AI Engineer','MLOps Engineer'],
+    'AI/ML Analyst':['AI Analyst','ML Analyst','Machine Learning Analyst'],
+    'Business Analyst':['IT Business Analyst','Business Systems Analyst','BA'],
+    'Project Manager':['Program Manager','IT Project Manager','Technical Project Manager'],
+    'Product Manager':['Product Owner','PM','Technical Product Manager'],
+    'Scrum Master':['Agile Coach','Scrum Coach','Agile Scrum Master'],
+    'QA Automation Engineer':['SDET','Test Automation Engineer','QA Engineer'],
+    'QA Analyst':['Quality Assurance Analyst','QA Tester','Software QA Analyst'],
+    'Cybersecurity Engineer':['Security Engineer','InfoSec Engineer','Cyber Engineer'],
+    'Cyber Security Analyst':['Security Analyst','InfoSec Analyst','Cybersecurity Analyst'],
+    'SOC Analyst':['Security Operations Analyst','SOC Engineer','Threat Analyst'],
+    'Cloud Engineer':['Cloud Architect','Cloud Solutions Engineer','AWS Engineer'],
+    'AWS Cloud Engineer':['AWS Solutions Architect','AWS Engineer','Cloud Infrastructure Engineer'],
+    'Site Reliability Engineer':['SRE','Platform Reliability Engineer','Site Reliability'],
+    'Network Engineer':['Network Administrator','Network Architect','Network Infrastructure Engineer'],
+    'SAP Consultant':['SAP Analyst','SAP Developer','SAP Functional Consultant'],
+    'Salesforce Developer':['Salesforce Engineer','SFDC Developer','Salesforce Architect'],
+    'ServiceNow Developer':['ServiceNow Engineer','ServiceNow Consultant','ServiceNow Admin'],
+    'MuleSoft Developer':['MuleSoft Integration Developer','MuleSoft Engineer','Integration Developer'],
+    'Financial Analyst':['Finance Analyst','FP&A Analyst','Financial Planning Analyst'],
+    'Supply Chain Analyst':['Supply Chain Manager','Logistics Analyst','SCM Analyst'],
+    'Hardware Engineer':['Hardware Design Engineer','Embedded Engineer','FPGA Engineer'],
+  };
+
+  renderHiringPeopleCard();
+
+  const syns = SYN[role] || [];
+  const roleTerms = [role, ...syns.slice(0, 1)];
+  const roleQ = `"${role}"`;
+  const roleOR = buildHiringOrGroup([role, ...syns.slice(0, 3)]);
+  const linkedInLocationTerm = state ? '' : '"United States"';
+  const searchLocationTerm = state ? `"${state}"` : '"United States"';
+  const companyTerm = company ? `"${company}"` : '';
+  const recruiterTitles = ['Recruiter', 'Technical Recruiter', 'Talent Acquisition', 'Talent Partner', 'Sourcer'];
+  const managerTitles = ['Hiring Manager', 'Engineering Manager', 'Director', 'VP'];
+  const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "open role")';
+
+  const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, roleTerms, linkedInLocationTerm, companyTerm);
+  const linkedInManagerBool = buildLinkedInHiringString(managerTitles, roleTerms, linkedInLocationTerm, companyTerm);
+  const linkedInPostsBool = [
+    roleOR,
+    hiringPhraseGroup,
+    searchLocationTerm,
+    companyTerm,
+    'NOT "open to work"',
+    'NOT "job seeker"'
+  ].filter(Boolean).join(' AND ');
+  const googleBool = [
+    roleOR,
+    '("we are hiring" OR "now hiring" OR "job opening" OR "open position" OR "hiring for" OR "opening on my team")',
+    searchLocationTerm,
+    companyTerm,
+    '-site:linkedin.com -site:indeed.com -site:glassdoor.com -site:ziprecruiter.com -site:monster.com -site:careerbuilder.com -site:dice.com -site:simplyhired.com'
+  ].filter(Boolean).join(' ');
+  const xRayBool = [
+    'site:linkedin.com/in',
+    roleQ,
+    searchLocationTerm,
+    companyTerm,
+    '-"open to work"',
+    '-"job seeker"'
+  ].filter(Boolean).join(' ');
+  const googlePostsBool = [
+    'site:linkedin.com/posts/',
+    roleOR,
+    hiringPhraseGroup,
+    searchLocationTerm,
+    companyTerm,
+    '-"open to work"',
+    '-"job seeker"'
+  ].filter(Boolean).join(' ');
+
+  document.getElementById('hiringLinkedInRecruiterStr').textContent = linkedInRecruiterBool;
+  document.getElementById('hiringLinkedInManagerStr').textContent = linkedInManagerBool;
+  document.getElementById('hiringLinkedInRecruiterMeta').innerHTML = buildHiringMetaHtml(linkedInRecruiterBool, 220);
+  document.getElementById('hiringLinkedInManagerMeta').innerHTML = buildHiringMetaHtml(linkedInManagerBool, 220);
+  document.getElementById('hiringPeopleXRayStr').textContent = xRayBool;
+  document.getElementById('hiringPeopleXRayMeta').innerHTML = buildHiringMetaHtml(xRayBool, 220);
+  document.getElementById('hiringLinkedInPostsStr').textContent = linkedInPostsBool;
+  document.getElementById('hiringGoogleStr').textContent = googleBool;
+  document.getElementById('hiringXRayStr').textContent = xRayBool;
+  const gPostsEl = document.getElementById('hiringGooglePostsStr');
+  if (gPostsEl) gPostsEl.textContent = googlePostsBool;
+
+  document.getElementById('hiringLinkedInRecruiterLink').href =
+    'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(linkedInRecruiterBool);
+  document.getElementById('hiringLinkedInManagerLink').href =
+    'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(linkedInManagerBool);
+  document.getElementById('hiringPeopleXRayLink').href =
+    'https://www.google.com/search?q=' + encodeURIComponent(xRayBool);
+  document.getElementById('hiringLinkedInPostsLink').href =
+    'https://www.linkedin.com/search/results/content/?keywords=' + encodeURIComponent(linkedInPostsBool) + '&sortBy=date_posted';
+  document.getElementById('hiringGoogleLink').href =
+    'https://www.google.com/search?q=' + encodeURIComponent(googleBool);
+  document.getElementById('hiringXRayLink').href =
+    'https://www.google.com/search?q=' + encodeURIComponent(xRayBool);
+  const gpLink = document.getElementById('hiringGooglePostsLink');
+  if (gpLink) gpLink.href = 'https://www.google.com/search?q=' + encodeURIComponent(googlePostsBool);
+
+  switchHiringPeopleTab('linkedin');
+
+  const res = document.getElementById('hiringResults');
+  res.style.display = 'block';
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const label = role + (state ? ' \u00b7 ' + state : ' \u00b7 United States') + (company ? ' \u00b7 ' + company : '');
+  showToast('\u2726 Hiring searches ready \u2014 ' + label);
+}
+
 function generateHiringSearch() {
+  generateHiringSearchV2();
+  return;
   const sel       = document.getElementById('hiringRoleSelect');
   const stateEl   = document.getElementById('hiringStateSelect');
   const manualEl  = document.getElementById('hiringManualInput');
