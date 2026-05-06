@@ -2457,16 +2457,20 @@ function generateHiringSearch() {
   };
 
   const syns    = SYN[role] || [];
+  const roleTerms = [role, ...syns.slice(0, 3)];
   const roleQ   = '"' + role + '"';
-  // Role OR group — primary + up to 2 synonyms
-  const roleOR  = syns.length
-    ? '(' + [role,...syns.slice(0,4)].map(r => '"'+r+'"').join(' OR ') + ')'
+  const roleOR  = roleTerms.length > 1
+    ? '(' + roleTerms.map(r => '"'+r+'"').join(' OR ') + ')'
     : roleQ;
 
-  const stateStr = state   ? '"' + state + '"' : '';
-  const coStr    = company ? '"' + company + '"' : '';
-  const usOr     = state   ? '("' + state + '" OR "United States")' : '"United States"';
+  const stateStr = state ? '"' + state + '"' : '';
+  const usOr     = state ? '("' + state + '" OR "United States")' : '"United States"';
   const usFull   = '"United States"';
+  const coStr    = company ? '"' + company + '"' : '';
+
+  const hiringTitleGroup = '("Hiring Manager" OR "Recruiter" OR "Technical Recruiter" OR "Talent Acquisition" OR "Talent Partner" OR "Sourcer" OR "Engineering Manager" OR "Director" OR "VP")';
+  const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "hiring" OR "open role" OR "opening on my team")';
+  const antiNoiseGroup = '-"open to work" -"job seeker" -"seeking opportunities" -"apply now" -"easy apply" -"job description" -"via indeed" -"apply on indeed"';
 
   // ════════════════════════════════════════════════════════════════
   // 1. LinkedIn PEOPLE SEARCH
@@ -2475,11 +2479,11 @@ function generateHiringSearch() {
   //    Uses role synonyms for broader title matching
   // ════════════════════════════════════════════════════════════════
   const linkedInPeopleBool = [
+    hiringTitleGroup,
     roleOR,
-    '("Hiring Manager" OR "Technical Recruiter" OR "Talent Acquisition" OR "Engineering Manager" OR "VP Engineering" OR "Director of Engineering" OR "Head of Talent")',
-    '("United States" OR "USA")',
-    stateStr,
-    coStr
+    usOr,
+    coStr,
+    antiNoiseGroup
   ].filter(Boolean).join(' AND ');
 
   // ════════════════════════════════════════════════════════════════
@@ -2489,11 +2493,11 @@ function generateHiringSearch() {
   //    Tip from research: add "hiring" AND role + filter Posts tab
   // ════════════════════════════════════════════════════════════════
   const linkedInPostsBool = [
-    roleQ,
-    '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring now" OR "I am hiring" OR "looking to hire" OR "join our team" OR "open role")',
+    roleOR,
+    hiringPhraseGroup,
     usOr,
     coStr,
-    'AND NOT "apply on indeed" AND NOT "via indeed" AND NOT "job description" AND NOT "apply here"'
+    antiNoiseGroup
   ].filter(Boolean).join(' AND ');
 
   // ════════════════════════════════════════════════════════════════
@@ -2503,12 +2507,11 @@ function generateHiringSearch() {
   //    intitle: finds pages where the role is in the page title
   // ════════════════════════════════════════════════════════════════
   const googleBool = [
-    'intitle:"' + role + '"',
-    '("we are hiring" OR "now hiring" OR "job opening" OR "open position" OR "immediately hiring" OR "join our team")',
-    usFull,
-    stateStr,
+    roleOR,
+    '("we are hiring" OR "now hiring" OR "job opening" OR "open position" OR "hiring for" OR "opening on my team")',
+    usOr,
     coStr,
-    '-site:indeed.com -site:linkedin.com -site:glassdoor.com -site:ziprecruiter.com -site:monster.com -site:careerbuilder.com -site:dice.com'
+    '-site:linkedin.com -site:indeed.com -site:glassdoor.com -site:ziprecruiter.com -site:monster.com -site:careerbuilder.com -site:dice.com -site:simplyhired.com'
   ].filter(Boolean).join(' ');
 
   // ════════════════════════════════════════════════════════════════
@@ -2519,11 +2522,11 @@ function generateHiringSearch() {
   // ════════════════════════════════════════════════════════════════
   const xRayBool = [
     'site:linkedin.com/in/',
-    roleQ,
-    stateStr || usFull,
-    '("hiring" OR "we are hiring" OR "looking to hire" OR "open role" OR "building a team")',
-    '("Hiring Manager" OR "Engineering Manager" OR "Technical Recruiter" OR "VP Engineering" OR "Director")',
-    '-"open to work" -"job seeker" -"seeking" -"jobs you may"'
+    hiringTitleGroup,
+    roleOR,
+    usOr,
+    '("hiring" OR "we are hiring" OR "looking to hire" OR "open role" OR "building my team")',
+    antiNoiseGroup
   ].filter(Boolean).join(' ');
 
   // ════════════════════════════════════════════════════════════════
@@ -2534,10 +2537,11 @@ function generateHiringSearch() {
   // ════════════════════════════════════════════════════════════════
   const googlePostsBool = [
     'site:linkedin.com/posts/',
-    roleQ,
-    '("hiring" OR "now hiring" OR "we are hiring" OR "looking for" OR "open role")',
-    stateStr || usFull,
-    coStr
+    roleOR,
+    hiringPhraseGroup,
+    usOr,
+    coStr,
+    antiNoiseGroup
   ].filter(Boolean).join(' ');
 
   // ── Populate all 5 display boxes
