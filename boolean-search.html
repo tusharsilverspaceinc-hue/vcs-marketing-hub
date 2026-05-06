@@ -2434,7 +2434,7 @@ function renderHiringPeopleCard() {
         <button class="btn-action" onclick="copyHiringStr('hiringLinkedInManagerStr')">Copy</button>
         <a class="btn-action search-btn" id="hiringLinkedInManagerLink" href="#" target="_blank" rel="noopener">LinkedIn People Search</a>
       </div>
-      <div class="hiring-tip">Uses LinkedIn-safe Boolean with only NOT exclusions. If a state is selected, keep the string short and apply the location filter inside LinkedIn after opening the results.</div>
+      <div class="hiring-tip">Uses LinkedIn-safe Boolean with only NOT exclusions. Location is now applied through the LinkedIn search link, so the copied string stays focused on people who are hiring for the role.</div>
     </div>
     <div id="hiringPeoplePanelGoogle" style="display:none;">
       <div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Google X-Ray fallback</div>
@@ -2500,6 +2500,11 @@ function buildLinkedInHiringString(titleTerms, roleTerms, locationTerm, companyT
   }, 220);
 }
 
+function buildHiringPeopleUrl(query, state) {
+  const location = state || 'United States';
+  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}&origin=GLOBAL_SEARCH_HEADER&geoUrn=&location=${encodeURIComponent(location)}`;
+}
+
 function generateHiringSearchV2() {
   const sel = document.getElementById('hiringRoleSelect');
   const stateEl = document.getElementById('hiringStateSelect');
@@ -2557,15 +2562,14 @@ function generateHiringSearchV2() {
   const roleTerms = [role, ...syns.slice(0, 1)];
   const roleQ = `"${role}"`;
   const roleOR = buildHiringOrGroup([role, ...syns.slice(0, 3)]);
-  const linkedInLocationTerm = state ? '' : '"United States"';
   const searchLocationTerm = state ? `"${state}"` : '"United States"';
   const companyTerm = company ? `"${company}"` : '';
-  const recruiterTitles = ['Recruiter', 'Technical Recruiter', 'Talent Acquisition', 'Talent Partner', 'Sourcer'];
+  const recruiterTitles = ['Recruiter', 'Technical Recruiter', 'Talent Acquisition', 'Talent Partner'];
   const managerTitles = ['Hiring Manager', 'Engineering Manager', 'Director', 'VP'];
   const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "open role")';
 
-  const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, roleTerms, linkedInLocationTerm, companyTerm);
-  const linkedInManagerBool = buildLinkedInHiringString(managerTitles, roleTerms, linkedInLocationTerm, companyTerm);
+  const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, roleTerms, '', companyTerm);
+  const linkedInManagerBool = buildLinkedInHiringString(managerTitles, roleTerms, '', companyTerm);
   const linkedInPostsBool = [
     roleOR,
     hiringPhraseGroup,
@@ -2612,9 +2616,9 @@ function generateHiringSearchV2() {
   if (gPostsEl) gPostsEl.textContent = googlePostsBool;
 
   document.getElementById('hiringLinkedInRecruiterLink').href =
-    'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(linkedInRecruiterBool);
+    buildHiringPeopleUrl(linkedInRecruiterBool, state);
   document.getElementById('hiringLinkedInManagerLink').href =
-    'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(linkedInManagerBool);
+    buildHiringPeopleUrl(linkedInManagerBool, state);
   document.getElementById('hiringPeopleXRayLink').href =
     'https://www.google.com/search?q=' + encodeURIComponent(xRayBool);
   document.getElementById('hiringLinkedInPostsLink').href =
