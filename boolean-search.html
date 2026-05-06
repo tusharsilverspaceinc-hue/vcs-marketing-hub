@@ -1911,7 +1911,6 @@ function buildMiscBlock() {
 function buildLinkedInMiscBlock() {
   const empType  = getChecked('#empGroup input');
   const industry = tags.industry;
-  const exp      = parseInt(document.getElementById('expRange').value, 10);
   let parts = [];
 
   if (industry.length) {
@@ -1923,8 +1922,6 @@ function buildLinkedInMiscBlock() {
     const empStr = empType.map(e => quoteIfNeeded(e)).join(' OR ');
     parts.push(empType.length > 1 ? `(${empStr})` : empStr);
   }
-
-  if (exp > 0) parts.push(`"${exp}+ years"`);
 
   return parts.join(' AND ');
 }
@@ -2018,10 +2015,11 @@ function buildLinkedInString() {
   const visa = buildVisaBlock();
   const misc = buildLinkedInMiscBlock();
   const suffix = (document.getElementById('customSuffix').value || '').trim();
+  const includeSkills = !title && skills.include;
 
   let parts = [];
   if (title) parts.push(title);
-  if (skills.include) parts.push(skills.include);
+  if (includeSkills) parts.push(skills.include);
   if (loc) parts.push(loc);
   if (company.include) parts.push(company.include);
   if (visa) parts.push(visa);
@@ -2159,7 +2157,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'Lean LinkedIn Jobs query: fewer operators, 2-3 title variants, and 1-2 support skills for broader consumer-search results.' },
+  }, tip:'LinkedIn Jobs works best with a clean title-first query. When a title is present, skill keywords are left out of the copied string to avoid over-filtering.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
