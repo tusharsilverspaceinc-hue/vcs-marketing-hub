@@ -2026,18 +2026,15 @@ function buildLinkedInLooseCompany() {
   return uniqueTerms(tags.company || []).slice(0, 2).map(quoteIfNeeded);
 }
 
-function buildLinkedInLooseMisc() {
-  const industry = uniqueTerms(tags.industry || []).slice(0, 2).map(quoteIfNeeded);
-  const empType = getChecked('#empGroup input').slice(0, 2).map(quoteIfNeeded);
-  const exp = parseInt(document.getElementById('expRange').value, 10);
-  const expTerms = exp > 0 ? [`"${exp} years"`] : [];
-  return [...industry, ...empType, ...expTerms];
-}
-
 function buildLinkedInLooseSkills() {
   const mustTerms = uniqueTerms(tags.must || []).slice(0, 2).map(quoteIfNeeded);
   if (mustTerms.length) return mustTerms;
   return uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
+}
+
+function buildLinkedInSeniorityGroup() {
+  const seniorityTerms = getChecked('#seniorityGroup input').map(quoteIfNeeded);
+  return buildLinkedInOrGroup(seniorityTerms);
 }
 
 function buildLinkedInOrGroup(terms) {
@@ -2056,7 +2053,7 @@ function buildLinkedInString() {
   const skillTerms = buildLinkedInLooseSkills();
   const locTerms = buildLinkedInLooseLocation();
   const companyTerms = buildLinkedInLooseCompany();
-  const miscTerms = buildLinkedInLooseMisc();
+  const seniorityGroup = buildLinkedInSeniorityGroup();
   const excludeTerms = uniqueTerms(tags.exclude || []).slice(0, 1).map(quoteIfNeeded);
 
   let groups = [];
@@ -2064,9 +2061,10 @@ function buildLinkedInString() {
   const titleGroup = buildLinkedInOrGroup(titleTerms);
   const skillGroup = buildLinkedInOrGroup(skillTerms);
   const locGroup = buildLinkedInOrGroup(locTerms.slice(0, 2));
-  const filterGroup = buildLinkedInOrGroup(companyTerms.slice(0, 1).concat(miscTerms.slice(0, 2)));
+  const filterGroup = buildLinkedInOrGroup(companyTerms.slice(0, 1));
 
   if (titleGroup) groups.push(titleGroup);
+  if (seniorityGroup) groups.push(seniorityGroup);
   if (skillGroup) groups.push(skillGroup);
   if (locGroup) groups.push(locGroup);
   if (filterGroup) groups.push(filterGroup);
@@ -2200,7 +2198,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'Built for LinkedIn boolean rules: AND / OR / NOT only, quoted phrases, grouped parentheses, 3-4 compact groups, and date/location filters still applied through Search Now URL params where supported.' },
+  }, tip:'Built for LinkedIn boolean rules: title, seniority, skills, location, and light company filters only. Advanced Options are excluded from the copied query; date posted still applies through Search Now URL params.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
