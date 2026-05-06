@@ -2040,7 +2040,18 @@ function buildLinkedInLooseSkills() {
   return uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
 }
 
+function buildLinkedInOrGroup(terms) {
+  if (!terms.length) return '';
+  if (terms.length === 1) return terms[0];
+  return `(${terms.join(' OR ')})`;
+}
+
 function buildLinkedInString() {
+  // LinkedIn-safe shape:
+  // - 3 to 4 grouped sections total
+  // - compact OR groups
+  // - light AND joins between groups
+  // - one optional NOT exclusion
   const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).slice(0, 8).map(quoteIfNeeded);
   const skillTerms = buildLinkedInLooseSkills();
   const locTerms = buildLinkedInLooseLocation();
@@ -2050,19 +2061,15 @@ function buildLinkedInString() {
 
   let groups = [];
 
-  if (titleTerms.length > 1) groups.push(`(${titleTerms.join(' OR ')})`);
-  else if (titleTerms.length === 1) groups.push(titleTerms[0]);
+  const titleGroup = buildLinkedInOrGroup(titleTerms);
+  const skillGroup = buildLinkedInOrGroup(skillTerms);
+  const locGroup = buildLinkedInOrGroup(locTerms.slice(0, 2));
+  const filterGroup = buildLinkedInOrGroup(companyTerms.slice(0, 1).concat(miscTerms.slice(0, 2)));
 
-  if (skillTerms.length > 1) groups.push(`(${skillTerms.join(' OR ')})`);
-  else if (skillTerms.length === 1) groups.push(skillTerms[0]);
-
-  const locGroup = locTerms.slice(0, 2);
-  if (locGroup.length > 1) groups.push(`(${locGroup.join(' OR ')})`);
-  else if (locGroup.length === 1) groups.push(locGroup[0]);
-
-  const filterTerms = companyTerms.slice(0, 1).concat(miscTerms.slice(0, 2));
-  if (filterTerms.length > 1) groups.push(`(${filterTerms.join(' OR ')})`);
-  else if (filterTerms.length === 1) groups.push(filterTerms[0]);
+  if (titleGroup) groups.push(titleGroup);
+  if (skillGroup) groups.push(skillGroup);
+  if (locGroup) groups.push(locGroup);
+  if (filterGroup) groups.push(filterGroup);
 
   groups = groups.slice(0, 4);
 
@@ -2193,7 +2200,7 @@ const platformMeta = {
     const tprParam = tpr && tpr !== 'r2592001' ? `&f_TPR=${tpr}` : (tpr === 'r2592001' ? '&f_TPR=r2592000&f_E=1' : '');
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
-  }, tip:'Optimized for LinkedIn limits: 3-4 groups total, light AND usage, and OR groups kept compact. Date posted still applies through Search Now URL filters.' },
+  }, tip:'Built for LinkedIn boolean rules: AND / OR / NOT only, quoted phrases, grouped parentheses, 3-4 compact groups, and date/location filters still applied through Search Now URL params where supported.' },
   'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
                     tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
