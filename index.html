@@ -2877,22 +2877,33 @@ function enhanceEmbeddedIframe(config) {
       "text-rendering:optimizeLegibility;" +
       "font-kerning:normal;" +
     "}" +
-    "body{background:#8797a8 !important;}" +
+    "body{background:#8797a8 !important;font-family:'Segoe UI',Arial,sans-serif !important;}" +
     ".page-sheet{" +
-      "box-shadow:0 1px 0 rgba(0,0,0,0.08),0 10px 28px rgba(0,0,0,0.16),0 0 0 1px rgba(0,0,0,0.05) !important;" +
+      "box-shadow:0 0 0 1px rgba(0,0,0,0.08),0 8px 22px rgba(0,0,0,0.10) !important;" +
       "image-rendering:auto;" +
     "}" +
     ".section-body,.field-grid,.kpi-row,.feedback-box,table,thead th,tbody td{" +
       "border-color:#c6d1db !important;" +
     "}" +
+    ".toolbar-brand,.page-tag,.btn-pdf,.section-header,.sub-title,.break-label,.sum-label,.big-score,.rating-text,thead th,.field-group label{" +
+      "font-family:'Segoe UI Semibold','Segoe UI',Arial,sans-serif !important;" +
+    "}" +
     ".field-group input,.field-group select,.ta-wrapper textarea,.feedback-box textarea,.score-box{" +
+      "font-family:'Segoe UI',Arial,sans-serif !important;" +
       "border-width:1.25px !important;" +
       "box-shadow:none !important;" +
     "}" +
     ".field-group input,.field-group select,.ta-wrapper textarea,.feedback-box textarea{" +
+      "background:#ffffff !important;" +
       "font-size:13px !important;" +
       "line-height:1.55 !important;" +
       "color:#213547 !important;" +
+    "}" +
+    ".field-group select{" +
+      "appearance:auto !important;" +
+      "-webkit-appearance:auto !important;" +
+      "padding-right:10px !important;" +
+      "background-image:none !important;" +
     "}" +
     ".field-group label,.sum-label,.break-label,.toolbar-brand,.page-tag,.btn-pdf,.section-header,.sub-title,thead th{" +
       "letter-spacing:0.35px !important;" +
@@ -2901,6 +2912,7 @@ function enhanceEmbeddedIframe(config) {
       "border-color:#007bbd !important;" +
       "box-shadow:0 0 0 1px rgba(0,123,189,0.18) !important;" +
     "}" +
+    ".page-inner{padding:38px 42px 36px !important;}" +
     ".toolbar,.page-break-strip,[id^='pdf-overlay']{" +
       "backdrop-filter:none !important;" +
     "}" +
