@@ -3078,120 +3078,191 @@ function enhanceEmbeddedIframe(config) {
     "    var doc;\n" +
     "    var pageWidth;\n" +
     "    var pageHeight;\n" +
-    "    var margin = 16;\n" +
+    "    var margin = 14;\n" +
+    "    var contentWidth;\n" +
     "    var y = margin;\n" +
-    "    var line = 6;\n" +
-    "    var sectionGap = 4;\n" +
-    "    var bodyWidth;\n" +
-    "    var title;\n" +
+    "    var title = CONFIG.label === 'BSR' ? 'BSR Performance Report' : 'Application Performance Report';\n" +
     "    var reportDate;\n" +
     "    var period;\n" +
     "    var recordName;\n" +
+    "    var metaRows;\n" +
     "    if (!jsPDFCtor) throw new Error('jsPDF is not available.');\n" +
-    "    doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });\n" +
+    "    doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true, compress: false });\n" +
     "    pageWidth = doc.internal.pageSize.getWidth();\n" +
     "    pageHeight = doc.internal.pageSize.getHeight();\n" +
-    "    bodyWidth = pageWidth - (margin * 2);\n" +
-    "    title = CONFIG.label === 'BSR' ? 'BSR Performance Report' : 'Application Performance Report';\n" +
+    "    contentWidth = pageWidth - (margin * 2);\n" +
     "    reportDate = findValue(['reviewDate'], payload);\n" +
     "    period = findValue(['monthInput', 'reviewMonth', 'month'], payload);\n" +
     "    recordName = findValue(['empName', 'employeeName', 'candidateName', 'fullName'], payload);\n" +
-    "    function newPageIfNeeded(required) {\n" +
-    "      if (y + required <= pageHeight - margin) return;\n" +
+    "    metaRows = [\n" +
+    "      ['Employee', recordName],\n" +
+    "      ['Review Period', period],\n" +
+    "      ['Date of Review', reportDate]\n" +
+    "    ].filter(function(row) { return cleanValue(row[1]); });\n" +
+    "    function ensureSpace(height) {\n" +
+    "      if (y + height <= pageHeight - margin) return;\n" +
     "      doc.addPage();\n" +
     "      y = margin;\n" +
+    "      drawPageHeader(false);\n" +
     "    }\n" +
-    "    function drawHeader() {\n" +
+    "    function drawPageHeader(firstPage) {\n" +
+    "      var headerHeight = firstPage ? 18 : 12;\n" +
+    "      doc.setFillColor(0, 74, 124);\n" +
+    "      doc.rect(margin, y, contentWidth, headerHeight, 'F');\n" +
+    "      doc.setTextColor(255, 255, 255);\n" +
     "      doc.setFont('helvetica', 'bold');\n" +
-    "      doc.setFontSize(16);\n" +
-    "      doc.text(title, margin, y);\n" +
+    "      doc.setFontSize(firstPage ? 17 : 13);\n" +
+    "      doc.text(title, margin + 4, y + (firstPage ? 11 : 7.5));\n" +
+    "      y += headerHeight + 4;\n" +
+    "      doc.setTextColor(34, 43, 54);\n" +
+    "      if (firstPage && metaRows.length) {\n" +
+    "        drawKeyValueTable(metaRows, ['Label', 'Value'], [42, contentWidth - 42]);\n" +
+    "        y += 2;\n" +
+    "      }\n" +
+    "    }\n" +
+    "    function drawSectionHeader(name) {\n" +
+    "      ensureSpace(11);\n" +
+    "      doc.setFillColor(232, 242, 250);\n" +
+    "      doc.setDrawColor(184, 217, 237);\n" +
+    "      doc.rect(margin, y, contentWidth, 8, 'FD');\n" +
+    "      doc.setFont('helvetica', 'bold');\n" +
+    "      doc.setFontSize(11.5);\n" +
+    "      doc.setTextColor(0, 74, 124);\n" +
+    "      doc.text(name, margin + 3, y + 5.3);\n" +
+    "      y += 10;\n" +
+    "      doc.setTextColor(34, 43, 54);\n" +
+    "    }\n" +
+    "    function drawKeyValueTable(rows, headers, widths) {\n" +
+    "      var rowHeightBase = 7;\n" +
+    "      var xLabel = margin;\n" +
+    "      var xValue = margin + widths[0];\n" +
+    "      if (headers && headers.length === 2) {\n" +
+    "        ensureSpace(9);\n" +
+    "        doc.setFillColor(245, 247, 250);\n" +
+    "        doc.setDrawColor(189, 201, 213);\n" +
+    "        doc.rect(xLabel, y, widths[0], 8, 'FD');\n" +
+    "        doc.rect(xValue, y, widths[1], 8, 'FD');\n" +
+    "        doc.setFont('helvetica', 'bold');\n" +
+    "        doc.setFontSize(10);\n" +
+    "        doc.text(headers[0], xLabel + 2.5, y + 5.1);\n" +
+    "        doc.text(headers[1], xValue + 2.5, y + 5.1);\n" +
+    "        y += 8;\n" +
+    "      }\n" +
+    "      rows.forEach(function(row) {\n" +
+    "        var label = cleanValue(row[0]);\n" +
+    "        var value = cleanValue(row[1]);\n" +
+    "        var labelLines = doc.splitTextToSize(label, widths[0] - 5);\n" +
+    "        var valueLines = doc.splitTextToSize(value, widths[1] - 5);\n" +
+    "        var height = Math.max(labelLines.length, valueLines.length) * 5 + 3;\n" +
+    "        ensureSpace(height + 1);\n" +
+    "        doc.setDrawColor(205, 214, 224);\n" +
+    "        doc.rect(xLabel, y, widths[0], height);\n" +
+    "        doc.rect(xValue, y, widths[1], height);\n" +
+    "        doc.setFont('helvetica', 'bold');\n" +
+    "        doc.setFontSize(10.5);\n" +
+    "        doc.text(labelLines, xLabel + 2.5, y + 4.5);\n" +
+    "        doc.setFont('helvetica', 'normal');\n" +
+    "        doc.text(valueLines, xValue + 2.5, y + 4.5);\n" +
+    "        y += height;\n" +
+    "      });\n" +
+    "      y += 3;\n" +
+    "    }\n" +
+    "    function drawMetricTable(titleText, rows) {\n" +
+    "      var widths = [38, 30, 32, 34, 34];\n" +
+    "      var starts = [margin, margin + 38, margin + 68, margin + 100, margin + 134];\n" +
+    "      drawSectionHeader(titleText);\n" +
+    "      ensureSpace(10);\n" +
+    "      doc.setFillColor(245, 247, 250);\n" +
+    "      doc.setDrawColor(189, 201, 213);\n" +
+    "      ['Metric', 'Target', 'Achieved', 'KPI', 'Rating'].forEach(function(head, index) {\n" +
+    "        doc.rect(starts[index], y, widths[index], 8, 'FD');\n" +
+    "        doc.setFont('helvetica', 'bold');\n" +
+    "        doc.setFontSize(9.8);\n" +
+    "        doc.text(head, starts[index] + 2, y + 5.1);\n" +
+    "      });\n" +
     "      y += 8;\n" +
-    "      doc.setFont('helvetica', 'normal');\n" +
-    "      doc.setFontSize(10);\n" +
-    "      if (recordName) { doc.text('Employee: ' + recordName, margin, y); y += 5; }\n" +
-    "      if (period) { doc.text('Review Period: ' + period, margin, y); y += 5; }\n" +
-    "      if (reportDate) { doc.text('Date of Review: ' + reportDate, margin, y); y += 5; }\n" +
-    "      y += 2;\n" +
-    "      doc.setDrawColor(0, 123, 189);\n" +
-    "      doc.line(margin, y, pageWidth - margin, y);\n" +
-    "      y += 7;\n" +
+    "      rows.forEach(function(row) {\n" +
+    "        var values = row.map(cleanValue);\n" +
+    "        var lineCounts = values.map(function(value, index) { return doc.splitTextToSize(value, widths[index] - 4).length; });\n" +
+    "        var height = Math.max.apply(Math, lineCounts) * 5 + 3;\n" +
+    "        ensureSpace(height + 1);\n" +
+    "        values.forEach(function(value, index) {\n" +
+    "          var lines = doc.splitTextToSize(value, widths[index] - 4);\n" +
+    "          doc.setDrawColor(205, 214, 224);\n" +
+    "          doc.rect(starts[index], y, widths[index], height);\n" +
+    "          doc.setFont('helvetica', index === 0 ? 'bold' : 'normal');\n" +
+    "          doc.setFontSize(10.2);\n" +
+    "          doc.text(lines, starts[index] + 2, y + 4.5);\n" +
+    "        });\n" +
+    "        y += height;\n" +
+    "      });\n" +
+    "      y += 3;\n" +
     "    }\n" +
-    "    function section(name) {\n" +
-    "      newPageIfNeeded(12);\n" +
-    "      doc.setFont('helvetica', 'bold');\n" +
-    "      doc.setFontSize(12);\n" +
-    "      doc.text(name, margin, y);\n" +
-    "      y += 6;\n" +
-    "      doc.setFont('helvetica', 'normal');\n" +
-    "      doc.setFontSize(10);\n" +
-    "    }\n" +
-    "    function textBlock(label, value) {\n" +
+    "    function drawParagraphBlock(label, value) {\n" +
     "      var clean = cleanValue(value);\n" +
     "      var lines;\n" +
+    "      var blockHeight;\n" +
     "      if (!clean) return;\n" +
-    "      lines = doc.splitTextToSize((label ? label + ': ' : '') + clean, bodyWidth);\n" +
-    "      newPageIfNeeded(lines.length * line + 2);\n" +
-    "      doc.text(lines, margin, y);\n" +
-    "      y += (lines.length * line) + 1;\n" +
+    "      lines = doc.splitTextToSize(clean, contentWidth - 8);\n" +
+    "      blockHeight = 8 + (lines.length * 5) + 4;\n" +
+    "      ensureSpace(blockHeight + 2);\n" +
+    "      doc.setFont('helvetica', 'bold');\n" +
+    "      doc.setFontSize(10.8);\n" +
+    "      doc.text(label, margin, y);\n" +
+    "      y += 3;\n" +
+    "      doc.setDrawColor(205, 214, 224);\n" +
+    "      doc.setFillColor(255, 255, 255);\n" +
+    "      doc.roundedRect(margin, y, contentWidth, blockHeight - 3, 2, 2, 'FD');\n" +
+    "      doc.setFont('helvetica', 'normal');\n" +
+    "      doc.setFontSize(10.4);\n" +
+    "      doc.text(lines, margin + 4, y + 6);\n" +
+    "      y += blockHeight + 1;\n" +
     "    }\n" +
-    "    function kvRows(rows) {\n" +
-    "      rows.forEach(function(row) {\n" +
-    "        var label = row[0];\n" +
-    "        var value = cleanValue(row[1]);\n" +
-    "        var wrapped;\n" +
-    "        if (!value) return;\n" +
-    "        wrapped = doc.splitTextToSize(value, bodyWidth - 42);\n" +
-    "        newPageIfNeeded(Math.max(1, wrapped.length) * line + 1);\n" +
-    "        doc.setFont('helvetica', 'bold');\n" +
-    "        doc.text(label + ':', margin, y);\n" +
+    "    function drawPageNumbers() {\n" +
+    "      var total = doc.getNumberOfPages();\n" +
+    "      var i;\n" +
+    "      for (i = 1; i <= total; i += 1) {\n" +
+    "        doc.setPage(i);\n" +
     "        doc.setFont('helvetica', 'normal');\n" +
-    "        doc.text(wrapped, margin + 42, y);\n" +
-    "        y += (Math.max(1, wrapped.length) * line) + 1;\n" +
-    "      });\n" +
-    "      y += sectionGap;\n" +
+    "        doc.setFontSize(9);\n" +
+    "        doc.setTextColor(100, 116, 139);\n" +
+    "        doc.text('Page ' + i + ' of ' + total, pageWidth - margin, pageHeight - 6, { align: 'right' });\n" +
+    "      }\n" +
+    "      doc.setTextColor(34, 43, 54);\n" +
     "    }\n" +
-    "    function metricSection(name, rows) {\n" +
-    "      section(name);\n" +
-    "      rows.forEach(function(row) {\n" +
-    "        var lineText = row.filter(function(part) { return cleanValue(part); }).join(' | ');\n" +
-    "        if (!lineText) return;\n" +
-    "        textBlock('', lineText);\n" +
-    "      });\n" +
-    "      y += sectionGap;\n" +
-    "    }\n" +
-    "    drawHeader();\n" +
-    "    section('Employee Details');\n" +
-    "    kvRows([\n" +
+    "    drawPageHeader(true);\n" +
+    "    drawSectionHeader('Employee Details');\n" +
+    "    drawKeyValueTable([\n" +
     "      ['Employee ID', findValue(['empID'], payload)],\n" +
     "      ['Department', findValue(['deptInput'], payload)],\n" +
     "      ['Branch / Location', findValue(['branchInput'], payload)],\n" +
     "      [CONFIG.label === 'BSR' ? 'BSR / Team Lead' : 'Team Lead / Manager', findValue(['teamLeadName'], payload)],\n" +
     "      ['Designation', findValue(['designationInput'], payload)]\n" +
-    "    ]);\n" +
-    "    metricSection('KPI Metrics', CONFIG.table === 'bsr_submissions' ? [\n" +
-    "      ['Attendance', 'Target ' + findValue(['attWorkDays'], payload), 'Achieved ' + findValue(['attPresent'], payload), 'KPI ' + findValue(['attKPI'], payload), 'Rating ' + findValue(['attRating'], payload)],\n" +
-    "      ['Interview', 'Target ' + findValue(['intTarget'], payload), 'Achieved ' + findValue(['intAchieved'], payload), 'KPI ' + findValue(['intKPI'], payload), 'Rating ' + findValue(['intRating'], payload)],\n" +
-    "      ['Submission', 'Target ' + findValue(['subTarget'], payload), 'Achieved ' + findValue(['subAchieved'], payload), 'KPI ' + findValue(['subKPI'], payload), 'Rating ' + findValue(['subRating'], payload)],\n" +
-    "      ['PO', 'Target ' + findValue(['poTarget'], payload), 'Achieved ' + findValue(['poAchieved'], payload), 'KPI ' + findValue(['poKPI'], payload), 'Rating ' + findValue(['poRating'], payload)]\n" +
+    "    ].filter(function(row) { return cleanValue(row[1]); }), ['Field', 'Value'], [52, contentWidth - 52]);\n" +
+    "    drawMetricTable('KPI Metrics', CONFIG.table === 'bsr_submissions' ? [\n" +
+    "      ['Attendance', findValue(['attWorkDays'], payload), findValue(['attPresent'], payload), findValue(['attKPI'], payload), findValue(['attRating'], payload)],\n" +
+    "      ['Interview', findValue(['intTarget'], payload), findValue(['intAchieved'], payload), findValue(['intKPI'], payload), findValue(['intRating'], payload)],\n" +
+    "      ['Submission', findValue(['subTarget'], payload), findValue(['subAchieved'], payload), findValue(['subKPI'], payload), findValue(['subRating'], payload)],\n" +
+    "      ['PO', findValue(['poTarget'], payload), findValue(['poAchieved'], payload), findValue(['poKPI'], payload), findValue(['poRating'], payload)]\n" +
     "    ] : [\n" +
-    "      ['Attendance', 'Target ' + findValue(['attWorkDays'], payload), 'Achieved ' + findValue(['attPresent'], payload), 'KPI ' + findValue(['attKPI'], payload), 'Rating ' + findValue(['attRating'], payload)],\n" +
-    "      ['PO', 'Target ' + findValue(['poTarget'], payload), 'Achieved ' + findValue(['poAchieved'], payload), 'KPI ' + findValue(['poKPI'], payload), 'Rating ' + findValue(['poRating'], payload)],\n" +
-    "      ['Application', 'Target ' + findValue(['appTarget'], payload), 'Achieved ' + findValue(['appAchieved'], payload), 'KPI ' + findValue(['appKPI'], payload), 'Rating ' + findValue(['appRating'], payload)]\n" +
+    "      ['Attendance', findValue(['attWorkDays'], payload), findValue(['attPresent'], payload), findValue(['attKPI'], payload), findValue(['attRating'], payload)],\n" +
+    "      ['PO', findValue(['poTarget'], payload), findValue(['poAchieved'], payload), findValue(['poKPI'], payload), findValue(['poRating'], payload)],\n" +
+    "      ['Application', findValue(['appTarget'], payload), findValue(['appAchieved'], payload), findValue(['appKPI'], payload), findValue(['appRating'], payload)]\n" +
     "    ]);\n" +
-    "    section('Feedback');\n" +
-    "    textBlock('Employee Self-Assessment', findValue(['ai-emp-kpi'], payload));\n" +
-    "    textBlock(CONFIG.label === 'BSR' ? 'BSR / Team Lead Feedback' : 'Team Lead Feedback', findValue(['ai-tl-kpi'], payload));\n" +
-    "    textBlock('Employee Development Feedback', findValue(['ai-emp-345'], payload));\n" +
-    "    textBlock(CONFIG.label === 'BSR' ? 'BSR / Team Lead Development Feedback' : 'Team Lead Development Feedback', findValue(['ai-tl-345'], payload));\n" +
-    "    textBlock('Final Combined Feedback', findValue(['ai-combined'], payload));\n" +
-    "    y += sectionGap;\n" +
-    "    section('Summary');\n" +
-    "    kvRows([\n" +
+    "    drawSectionHeader('Feedback');\n" +
+    "    drawParagraphBlock('Employee Self-Assessment', findValue(['ai-emp-kpi'], payload));\n" +
+    "    drawParagraphBlock(CONFIG.label === 'BSR' ? 'BSR / Team Lead Feedback' : 'Team Lead Feedback', findValue(['ai-tl-kpi'], payload));\n" +
+    "    drawParagraphBlock('Employee Development Feedback', findValue(['ai-emp-345'], payload));\n" +
+    "    drawParagraphBlock(CONFIG.label === 'BSR' ? 'BSR / Team Lead Development Feedback' : 'Team Lead Development Feedback', findValue(['ai-tl-345'], payload));\n" +
+    "    drawParagraphBlock('Final Combined Feedback', findValue(['ai-combined'], payload));\n" +
+    "    drawSectionHeader('Summary');\n" +
+    "    drawKeyValueTable([\n" +
     "      ['Overall Average Score', findValue(['avgScore'], payload)],\n" +
     "      ['Score Breakdown', findValue(['scoreBreakdown'], payload)],\n" +
     "      ['Overall Rating', findValue(['ratingText'], payload)],\n" +
     "      ['Authorized Signatory', findValue(['tlSignDisplay'], payload)]\n" +
-    "    ]);\n" +
+    "    ].filter(function(row) { return cleanValue(row[1]); }), ['Field', 'Value'], [52, contentWidth - 52]);\n" +
+    "    drawPageNumbers();\n" +
     "    doc.save(makePdfName(payload));\n" +
     "  }\n" +
     "  function wireExport() {\n" +
