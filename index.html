@@ -32,6 +32,11 @@
   --section-bg: rgba(15,26,38,.98);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -42,11 +47,21 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: clamp(56px,8vh,96px) clamp(1rem,4vw,3rem) 60px;
   position: relative;
+}
+
+input, select, textarea, button, label {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
 }
 
 /* ── CSS-only background — zero JS, zero canvas ── */
@@ -265,7 +280,7 @@ form {
 .field select,
 .field textarea {
   background: var(--sf);
-  border: 1px solid var(--bdr);
+  border: 1.25px solid rgba(20,162,226,.28);
   padding: .7rem .95rem;
   font-size: .875rem;
   font-family: 'Space Grotesk', sans-serif;
@@ -282,7 +297,7 @@ form {
 .field textarea:focus {
   border-color: rgba(20,162,226,.58);
   background: rgba(20,162,226,.09);
-  box-shadow: 0 0 0 1px rgba(20,162,226,.22), inset 0 0 16px rgba(20,162,226,.07);
+  box-shadow: 0 0 0 1px rgba(20,162,226,.24), inset 0 0 0 1px rgba(20,162,226,.05);
 }
 .field:focus-within label { color: var(--c); }
 
@@ -466,7 +481,7 @@ select {
   width: 100%;
   background: var(--deep);
   color: var(--w);
-  border: 1px solid rgba(20,162,226,.38);
+  border: 1.25px solid rgba(20,162,226,.42);
   border-radius: 0;
   padding: 0.6rem 0.75rem;
   font-family: 'Space Grotesk', sans-serif;
@@ -485,7 +500,7 @@ select {
 }
 select:focus {
   border-color: var(--c);
-  box-shadow: 0 0 0 2px rgba(20,162,226,.35);
+  box-shadow: 0 0 0 1px rgba(20,162,226,.32);
 }
 select option {
   background: var(--deep);
@@ -2840,6 +2855,7 @@ function enhanceEmbeddedIframe(config) {
   var iframe = wrap ? wrap.querySelector('iframe') : null;
   var src;
   var html;
+  var injectedStyle;
   var injectedScript;
 
   if (!iframe || iframe.dataset.supabaseEnhanced === 'true') return;
@@ -2852,6 +2868,48 @@ function enhanceEmbeddedIframe(config) {
     iframe.dataset.supabaseEnhanced = 'true';
     return;
   }
+
+  injectedStyle = "<style id=\"__vcs_embedded_render_quality__\">" +
+    "html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}" +
+    "body,input,select,textarea,button,label,table,th,td{" +
+      "-webkit-font-smoothing:antialiased;" +
+      "-moz-osx-font-smoothing:grayscale;" +
+      "text-rendering:optimizeLegibility;" +
+      "font-kerning:normal;" +
+    "}" +
+    "body{background:#8797a8 !important;}" +
+    ".page-sheet{" +
+      "box-shadow:0 1px 0 rgba(0,0,0,0.08),0 10px 28px rgba(0,0,0,0.16),0 0 0 1px rgba(0,0,0,0.05) !important;" +
+      "image-rendering:auto;" +
+    "}" +
+    ".section-body,.field-grid,.kpi-row,.feedback-box,table,thead th,tbody td{" +
+      "border-color:#c6d1db !important;" +
+    "}" +
+    ".field-group input,.field-group select,.ta-wrapper textarea,.feedback-box textarea,.score-box{" +
+      "border-width:1.25px !important;" +
+      "box-shadow:none !important;" +
+    "}" +
+    ".field-group input,.field-group select,.ta-wrapper textarea,.feedback-box textarea{" +
+      "font-size:13px !important;" +
+      "line-height:1.55 !important;" +
+      "color:#213547 !important;" +
+    "}" +
+    ".field-group label,.sum-label,.break-label,.toolbar-brand,.page-tag,.btn-pdf,.section-header,.sub-title,thead th{" +
+      "letter-spacing:0.35px !important;" +
+    "}" +
+    ".field-group input:focus,.field-group select:focus,.ta-wrapper textarea:focus,.feedback-box textarea:focus{" +
+      "border-color:#007bbd !important;" +
+      "box-shadow:0 0 0 1px rgba(0,123,189,0.18) !important;" +
+    "}" +
+    ".toolbar,.page-break-strip,[id^='pdf-overlay']{" +
+      "backdrop-filter:none !important;" +
+    "}" +
+    "@media (min-resolution: 2dppx){" +
+      ".page-sheet,.section-body,.field-grid,.kpi-row,.feedback-box,table,thead th,tbody td{" +
+        "border-width:1px !important;" +
+      "}" +
+    "}" +
+    "</style>";
 
   injectedScript = escapeInlineScript(
     "<script>(function(){\n" +
@@ -3087,10 +3145,12 @@ function enhanceEmbeddedIframe(config) {
     "    var recordName;\n" +
     "    var metaRows;\n" +
     "    if (!jsPDFCtor) throw new Error('jsPDF is not available.');\n" +
-    "    doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true, compress: false });\n" +
+    "    doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true, compress: false, precision: 16 });\n" +
     "    pageWidth = doc.internal.pageSize.getWidth();\n" +
     "    pageHeight = doc.internal.pageSize.getHeight();\n" +
     "    contentWidth = pageWidth - (margin * 2);\n" +
+    "    doc.setLineWidth(0.25);\n" +
+    "    doc.setLineHeightFactor(1.25);\n" +
     "    reportDate = findValue(['reviewDate'], payload);\n" +
     "    period = findValue(['monthInput', 'reviewMonth', 'month'], payload);\n" +
     "    recordName = findValue(['empName', 'employeeName', 'candidateName', 'fullName'], payload);\n" +
@@ -3318,6 +3378,7 @@ function enhanceEmbeddedIframe(config) {
     "})();<\/script>"
   );
 
+  html = html.replace('</head>', '\n' + injectedStyle + '\n</head>');
   html = html.replace('</body>', '\n' + injectedScript + '\n</body>');
   iframe.removeAttribute('src');
   iframe.setAttribute('srcdoc', html);
