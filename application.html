@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vizva Performance Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Poppins:wght@500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* ─── TOKENS ─── */
+        :root {
+            --blue:      #007bbd;
+            --dark:      #004a7c;
+            --deep:      #003a61;
+            --grey-bg:   #f4f6f8;
+            --border:    #d0d7de;
+            --text:      #2c3e50;
+            --purple:    #7c3aed;
+            --green:     #2d7a2d;
+            --green-bg:  #eef8ee;
+            --green-bd:  #b5d9b5;
+            --blue-bg:   #eaf4fb;
+            --blue-bd:   #b8d9ed;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ─── BODY ─── */
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #8899a8;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── STICKY TOOLBAR ─── */
+        .toolbar {
+            position: sticky; top: 0; z-index: 1000;
+            background: #162231;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 36px;
+            box-shadow: 0 3px 16px rgba(0,0,0,0.4);
+        }
+        .toolbar-brand {
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px; font-weight: 700; color: #fff;
+        }
+        .toolbar-brand span { color: var(--blue); }
+        .toolbar-pages {
+            display: flex; gap: 10px;
+        }
+        .page-tag {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.16);
+            color: #b8cad8;
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 0.7px; text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+            user-select: none;
+        }
+        .page-tag:hover {
+            background: rgba(255,255,255,0.18);
+            color: #ffffff;
+        }
+        .page-tag.active {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,123,189,0.4);
+        }
+        .btn-pdf {
+            display: flex; align-items: center; gap: 7px;
+            background: var(--blue); color: #fff;
+            border: none; border-radius: 22px;
+            padding: 9px 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 0.5px; text-transform: uppercase;
+            cursor: pointer; transition: background .18s;
+        }
+        .btn-pdf:hover { background: #005f96; }
+        .btn-pdf svg { width:15px; height:15px; fill:#fff; }
+
+        /* ─── DOCUMENT AREA ─── */
+        .doc-area {
+            padding: 40px 0 70px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* ─── PAGE SHEET ─── */
+        .page-sheet {
+            width: 820px;
+            background: #fff;
+            position: relative;
+            overflow: visible;
+        }
+        #page1 {
+            box-shadow: 0 2px 0 rgba(0,0,0,0.08),
+                        0 8px 32px rgba(0,0,0,0.22),
+                        0 0 0 1px rgba(0,0,0,0.06);
+            border-radius: 3px 3px 0 0;
+        }
+        #page2 {
+            box-shadow: 0 -2px 0 rgba(0,0,0,0.08),
+                        0 8px 32px rgba(0,0,0,0.22),
+                        0 0 0 1px rgba(0,0,0,0.06);
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* ─── PAGE BREAK STRIP ─── */
+        .page-break-strip {
+            width: 820px;
+            height: 38px;
+            background: linear-gradient(180deg, #5a6e7e 0%, #8899a8 100%);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+        .page-break-strip::before {
+            content:'';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: rgba(0,0,0,0.2);
+        }
+        .page-break-strip::after {
+            content:'';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+            background: rgba(0,0,0,0.2);
+        }
+        .break-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: 9px; font-weight: 700;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 2.5px; text-transform: uppercase;
+        }
+
+        /* ─── PAGE CORNER BADGE ─── */
+        .corner-badge {
+            position: absolute; top: 0; right: 0; z-index: 10;
+            background: var(--blue); color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 8px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 5px 14px;
+            border-bottom-left-radius: 8px;
+        }
+
+        /* ─── WATERMARK ─── */
+        .watermark {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 130px; font-weight: 900;
+            color: rgba(0,123,189,0.025);
+            pointer-events: none; white-space: nowrap;
+            font-family: 'Poppins', sans-serif; z-index: 0;
+        }
+
+        /* ─── PAGE INNER PADDING ─── */
+        .page-inner {
+            padding: 42px 52px 40px;
+            position: relative; z-index: 1;
+        }
+
+        /* ─── HEADER ─── */
+        .page-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 3px solid var(--blue);
+            padding-bottom: 15px; margin-bottom: 4px;
+        }
+        .brand-logo {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .brand-logo-img {
+            height: 58px; width: auto; object-fit: contain; flex-shrink: 0;
+        }
+        .brand-logo h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px; font-weight: 700;
+            color: var(--dark); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .brand-logo h1 span { color: var(--blue); }
+        .brand-logo p { margin-top: 3px; font-size: 10px; color: #777; font-weight: 600; }
+        .report-meta { text-align: right; }
+        .report-meta h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px; font-weight: 700; color: var(--blue);
+        }
+        .emp-name-display {
+            font-size: 17px; color: var(--blue); font-weight: 700;
+            margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+            min-height: 22px;
+        }
+
+        /* ─── SECTION HEADER ─── */
+        .section-header {
+            background: var(--deep); color: #fff;
+            padding: 10px 16px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.6px;
+            border-radius: 5px 5px 0 0;
+        }
+        .section-body {
+            border: 2px solid var(--deep);
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            padding: 14px 14px 10px;
+            margin-bottom: 18px;
+        }
+
+        /* ─── SUB-TITLE ─── */
+        .sub-title {
+            background: var(--dark); color: #fff;
+            padding: 6px 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 10.5px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.4px;
+            border-radius: 4px; margin: 14px 0 9px;
+        }
+        .sub-title:first-child { margin-top: 4px; }
+
+        /* ─── FIELD GRID ─── */
+        .field-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 11px;
+            background: var(--grey-bg);
+            border: 1px solid var(--border);
+            border-radius: 5px; padding: 14px;
+        }
+        .field-group label {
+            display: block; font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.4px;
+            color: #5a6a7a; margin-bottom: 4px;
+        }
+        .field-group input {
+            width: 100%; padding: 6px 10px;
+            border: 1px solid #c8d0d8; border-radius: 4px;
+            font-size: 12.5px; font-family: inherit;
+            background: #fff; color: var(--text);
+            min-height: 30px; transition: border-color .15s;
+        }
+        .field-group input:focus { outline: none; border-color: var(--blue); }
+
+        /* ─── KPI ROWS ─── */
+        .kpi-row {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 11px;
+            background: var(--grey-bg);
+            border: 1px solid var(--border);
+            border-radius: 5px; padding: 14px;
+            margin-bottom: 4px;
+        }
+        .kpi-calc {
+            background: var(--blue-bg) !important;
+            border-color: var(--blue-bd) !important;
+            color: var(--blue) !important;
+            font-weight: 700 !important; cursor: default;
+        }
+        .kpi-rating {
+            background: var(--green-bg) !important;
+            border-color: var(--green-bd) !important;
+            color: var(--green) !important;
+            font-weight: 700 !important; cursor: default;
+        }
+
+        /* ─── TABLE ─── */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        thead th {
+            background: #f0f4f7; color: var(--dark);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.4px;
+            text-align: left;
+        }
+        tbody td { border: 1px solid var(--border); padding: 10px 12px; font-size: 12px; vertical-align: top; }
+        .score-cell { text-align: center; vertical-align: middle !important; }
+        .score-box {
+            display: flex; align-items: center; justify-content: center;
+            width: 54px; margin: 0 auto;
+            padding: 0;
+            height: 38px;
+            border: 2px solid var(--blue); border-radius: 6px;
+            text-align: center; font-weight: 700; font-size: 14px;
+            color: var(--blue); background: var(--blue-bg);
+            font-family: 'Poppins', sans-serif;
+            line-height: 1;
+            box-sizing: border-box;
+        }
+        /* Remove number input spinner arrows */
+        .score-box[type="number"]::-webkit-inner-spin-button,
+        .score-box[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .score-box[type="number"] { -moz-appearance: textfield; }
+        .metric-name { color: var(--blue); font-weight: 700; font-size: 12.5px; }
+
+        /* ─── ROWSPAN TEXTAREA CELLS ─── */
+        .ta-cell { background: #fff; padding: 0 !important; vertical-align: top; height: auto !important; }
+        .ta-wrapper {
+            display: flex; flex-direction: column;
+            position: relative; padding: 8px; height: auto;
+        }
+        .ta-wrapper textarea {
+            width: 100%; resize: none;
+            border: 1px solid #ccd4db; border-radius: 4px;
+            padding: 8px 8px 26px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 11.5px; line-height: 1.55;
+            box-sizing: border-box; height: auto; min-height: 80px;
+            overflow: hidden; color: var(--text); transition: height 0.1s ease;
+        }
+        .ta-wrapper textarea:focus { outline: none; border-color: var(--blue); }
+        .ai-btn {
+            align-self: flex-end; margin-top: 4px;
+            background: var(--purple); color: #fff;
+            border: none; border-radius: 4px;
+            font-size: 9px; padding: 3px 7px;
+            cursor: pointer; font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+        }
+        .ai-btn:hover { background: #5b21b6; }
+
+        /* ─── FEEDBACK BOX ─── */
+        .feedback-box {
+            border: 1px solid var(--border);
+            border-radius: 5px; background: #fafbfc;
+            padding: 5px; position: relative;
+        }
+        .feedback-box textarea {
+            width: 100%; border: 1px solid #ccd4db; border-radius: 4px;
+            padding: 8px 8px 30px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 12px; line-height: 1.55;
+            resize: none; min-height: 180px; height: auto;
+            overflow: hidden; box-sizing: border-box; background: transparent; color: var(--text);
+        }
+        .feedback-box textarea:focus { outline: none; border-color: var(--blue); }
+        .feedback-box .ai-btn { position: absolute; right: 9px; bottom: 9px; }
+
+        /* ─── SUMMARY BAR ─── */
+        .summary-bar {
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            border: 2px solid var(--dark); border-radius: 6px;
+            overflow: hidden; margin-top: 22px;
+        }
+        .sum-cell {
+            padding: 16px 12px; text-align: center;
+            border-right: 1px solid var(--border); background: #fff;
+        }
+        .sum-cell:last-child { border-right: none; }
+        .sum-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7a8d; margin-bottom: 6px; }
+        .big-score { font-family: 'Poppins', sans-serif; font-size: 38px; font-weight: 700; color: var(--blue); line-height: 1; }
+        .score-breakdown { font-size: 9.5px; color: #94a3b8; margin-top: 5px; }
+        .rating-text { font-family: 'Poppins', sans-serif; font-weight: 700; text-transform: uppercase; color: #b0bec5; font-size: 13px; margin-top: 8px; }
+        .esign { font-family: 'Dancing Script', cursive; font-size: 30px; color: var(--dark); line-height: 1.2; }
+        .sign-line { border-top: 1px solid #555; font-size: 9.5px; font-weight: 700; color: #444; padding-top: 3px; margin-top: 6px; }
+
+        /* ─── PAGE FOOTER ─── */
+        .page-footer {
+            margin-top: 24px; padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 9.5px; color: #94a3b8;
+        }
+        .page-footer strong { color: #5a6a7a; }
+        .page-footer a { color: var(--blue); text-decoration: none; }
+
+        /* ─── PDF OVERLAY ─── */
+        #pdf-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(8,18,30,0.72);
+            z-index: 9999;
+            align-items: center; justify-content: center; flex-direction: column;
+            gap: 18px; backdrop-filter: blur(4px);
+        }
+        #pdf-overlay.show { display: flex; }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(255,255,255,0.18);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin .75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .overlay-msg { font-family:'Poppins',sans-serif; font-size:15px; font-weight:600; color:#fff; }
+        .overlay-sub { font-family:'Open Sans',sans-serif; font-size:11px; color:rgba(255,255,255,.5); }
+
+        /* ─── PRINT ─── */
+        @media print {
+            body { background:#fff !important; }
+            .toolbar, .page-break-strip, .corner-badge, .ai-btn { display:none !important; }
+            .doc-area { padding:0; }
+            .page-sheet { width:100% !important; box-shadow:none !important; border-radius:0 !important; }
+            #page1 { page-break-after:always; break-after:page; }
+            #page2 { page-break-before:always; break-before:page; }
+            .page-inner { padding: 18mm 18mm; }
+        }
+    
+        /* Auto-expand table rows with textarea content */
+        #page1 table tr, #page2 table tr { height: auto !important; }
+        #page1 table td, #page2 table td { height: auto !important; }
+
+        </style>
+</head>
+<body>
+
+<!-- ═══ PDF LOADING OVERLAY ═══ -->
+<div id="pdf-overlay">
+    <div class="spinner"></div>
+    <div class="overlay-msg" id="pdf-msg">Generating PDF…</div>
+    <div class="overlay-sub">4K quality · A4 format · Please wait</div>
+</div>
+
+<!-- ═══ STICKY TOOLBAR ═══ -->
+<div class="toolbar">
+    <div class="toolbar-brand"><span>Vizva</span> Consultancy Services — Performance Report</div>
+    <div class="toolbar-pages">
+        <span class="page-tag active" id="tab-page1" onclick="showPage(1)">📋 Page 1 · Employee Information</span>
+        <span class="page-tag" id="tab-page2" onclick="showPage(2)">📊 Page 2 · Key Performance Metrics</span>
+    </div>
+    <button class="btn-pdf" onclick="exportPDF()">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Export PDF (A4)
+    </button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     DOCUMENT — both pages stacked, always visible
+═════════════════════════════════════════════════ -->
+<div class="doc-area">
+
+    <!-- ┌──────────────────────────────────────────┐
+         │  PAGE 1 — A. Employee Information        │
+         └──────────────────────────────────────────┘ -->
+    <div class="page-sheet" id="page1">
+        <div class="watermark">VIZVA</div>
+        <div class="corner-badge">Page 1 of 2</div>
+        <div class="page-inner" id="page1-inner">
+
+            <div class="page-header">
+                <div class="brand-logo">
+                    <img src="data:image/jpeg;base64,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" alt="Vizva Logo" class="brand-logo-img">
+                    <div>
+                    <h1><span>Vizva</span> Consultancy Services</h1>
+                    <p>Connecting Talent with Opportunity: Specialized Staffing Solutions</p>
+                    </div>
+                </div>
+                <div class="report-meta">
+                    <h2 id="dynamicTitle">PERFORMANCE REPORT</h2>
+                    <div class="emp-name-display" id="empNameDisplay"></div>
+                </div>
+            </div>
+            <!-- SECTION A -->
+            <div style="text-align:center; margin: 0 0 8px 0; padding: 3px 0;">
+                <span style="font-family:'Poppins',sans-serif; font-size:10px; font-weight:800; color:var(--dark); letter-spacing:0.8px; text-transform:uppercase;">Application Recruiter Evaluation</span>
+            </div>
+            <div class="section-header">A. &nbsp; Employee Information</div>
+            <div class="section-body">
+
+                <div class="sub-title">1 · Employee Details</div>
+                <div class="field-grid">
+                    <div class="field-group"><label>Employee Name</label>
+                        <input type="text" autocomplete="off" id="empName"  oninput="syncEmpName()"></div>
+                    <div class="field-group"><label>Employee ID</label>
+                        <input type="text" autocomplete="off" id="empID" ></div>
+                    <div class="field-group"><label>Department</label>
+                        <input type="text" autocomplete="off" id="deptInput" ></div>
+                    <div class="field-group"><label>Branch / Location</label>
+                        <select id="branchInput" style="width:100%;padding:6px 10px;border:1px solid #c8d0d8;border-radius:4px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--text);min-height:30px;">
+                            <option value="">-- Select Branch --</option>
+                            <option value="GGR">GGR</option>
+                            <option value="AMD">AMD</option>
+                            <option value="LKN">LKN</option>
+                        </select></div>
+                    <div class="field-group"><label>Team Lead / Manager</label>
+                        <input type="text" autocomplete="off" id="teamLeadName"  oninput="syncTeamLeadSign()"></div>
+                    <div class="field-group"><label>Designation</label>
+                        <input type="text" autocomplete="off" id="designationInput" value="Application Recruiter" readonly style="background:#f4f6f8;cursor:not-allowed;color:#5a6a7a;"></div>
+                    <div class="field-group"><label>Date of Review</label>
+                        <input type="date" id="reviewDate" onchange="autoUpdateMonth()"></div>
+                    <div class="field-group"><label>Review Period (Month)</label>
+                        <input type="text" autocomplete="off" id="monthInput" readonly style="background:#f0f2f4;color:#666;"></div>
+                </div>
+
+                <div class="sub-title">2 · Attendance KPI</div>
+                <div class="kpi-row">
+                    <div class="field-group"><label>Working Days</label>
+                        <input type="number" autocomplete="off" id="attWorkDays" min="0"  oninput="calcKPI('att')"></div>
+                    <div class="field-group"><label>Days Present</label>
+                        <input type="number" autocomplete="off" id="attPresent" min="0"  oninput="calcKPI('att')"></div>
+                    <div class="field-group"><label>Attendance KPI %</label>
+                        <input type="text" autocomplete="off" id="attKPI" class="kpi-calc" readonly placeholder="Auto-calculated"></div>
+                    <div class="field-group"><label>Attendance Rating / 5</label>
+                        <input type="text" autocomplete="off" id="attRating" class="kpi-rating" readonly placeholder="Auto-calculated"></div>
+                </div>
+
+
+
+                <div class="sub-title">3 · PO KPI</div>
+                <div class="kpi-row">
+                    <div class="field-group"><label>PO Target</label>
+                        <input type="number" autocomplete="off" id="poTarget" min="0" oninput="calcKPI('po')"></div>
+                    <div class="field-group"><label>PO Achieved</label>
+                        <input type="number" autocomplete="off" id="poAchieved" min="0" oninput="calcKPI('po')"></div>
+                    <div class="field-group"><label>PO KPI %</label>
+                        <input type="text" autocomplete="off" id="poKPI" class="kpi-calc" readonly placeholder="Auto-calculated"></div>
+                    <div class="field-group"><label>PO Rating / 5</label>
+                        <input type="text" autocomplete="off" id="poRating" class="kpi-rating" readonly placeholder="Auto-calculated"></div>
+                </div>
+
+                <div class="sub-title">4 · Application KPI</div>
+                <div class="kpi-row">
+                    <div class="field-group"><label>Application Target</label>
+                        <input type="number" autocomplete="off" id="appTarget" min="0" oninput="calcKPI('app')"></div>
+                    <div class="field-group"><label>Applications Achieved</label>
+                        <input type="number" autocomplete="off" id="appAchieved" min="0" oninput="calcKPI('app')"></div>
+                    <div class="field-group"><label>Application KPI %</label>
+                        <input type="text" autocomplete="off" id="appKPI" class="kpi-calc" readonly placeholder="Auto-calculated"></div>
+                    <div class="field-group"><label>Application Rating / 5</label>
+                        <input type="text" autocomplete="off" id="appRating" class="kpi-rating" readonly placeholder="Auto-calculated"></div>
+                </div>
+
+            </div><!-- /section-body -->
+
+            <div class="page-footer">
+                <div><strong>Vizva Consultancy Services</strong> &nbsp;|&nbsp; <a href="#">www.vizvaconsultancyservices.com</a></div>
+                <div style="font-family:'Poppins',sans-serif;font-weight:700;color:#8899a8;">Page 1 of 2</div>
+            </div>
+        
+        <!-- Footer -->
+        <div style="margin-top:18px; padding-top:10px; border-top:2px solid #000; text-align:center;">
+            <p style="font-weight:700; color:#000000; font-family:'Open Sans',sans-serif; font-size:12.5px; margin:0;">
+                If you have any questions regarding score kindly reach HR Department &ndash;
+                <a href="mailto:Hr@vizvainc.com" style="color:#000000; font-weight:700; text-decoration:underline;">Hr@vizvainc.com</a>
+            </p>
+        </div>
+</div><!-- /page-inner -->
+    </div><!-- /#page1 -->
+
+    <!-- PAGE BREAK STRIP -->
+    <div class="page-break-strip">
+        <span class="break-label">⎯ &nbsp; Page Break &nbsp; ⎯ &nbsp; Page 2 Continues Below &nbsp; ⎯</span>
+    </div>
+
+    <!-- ┌──────────────────────────────────────────┐
+         │  PAGE 2 — B. Key Performance Metrics     │
+         └──────────────────────────────────────────┘ -->
+    <div class="page-sheet" id="page2">
+        <div class="watermark">VIZVA</div>
+        <div class="corner-badge">Page 2 of 2</div>
+        <div class="page-inner" id="page2-inner">
+
+            <div class="page-header">
+                <div class="brand-logo">
+                    <img src="data:image/jpeg;base64,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" alt="Vizva Logo" class="brand-logo-img">
+                    <div>
+                    <h1><span>Vizva</span> Consultancy Services</h1>
+                    <p>Connecting Talent with Opportunity: Specialized Staffing Solutions</p>
+                    </div>
+                </div>
+                <div class="report-meta">
+                    <h2 id="dynamicTitle2">PERFORMANCE REPORT</h2>
+                    <div class="emp-name-display" id="empNameDisplay2"></div>
+                </div>
+            </div>
+
+            <!-- SECTION B -->
+            <div class="section-header">B. &nbsp; Key Performance Metrics</div>
+            <div class="section-body" style="padding:10px 10px 8px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:20%;">Competency / Metric</th>
+                            <th style="width:28%;">Employee Feedback</th>
+                            <th style="width:10%;">Score</th>
+                            <th style="width:42%;">Team Lead / Manager Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="vertical-align:middle;"><span class="metric-name">PO Rating</span></td>
+                            <td class="ta-cell" rowspan="2" id="empKpiCell">
+                                <div class="ta-wrapper" id="empKpiWrapper">
+                                    <textarea id="ai-emp-kpi" oninput="autoExpand(this)" placeholder="Employee self-assessment on PO Closures &amp; Applications…"></textarea>
+                                    <button class="ai-btn" onclick="aiFix('ai-emp-kpi')">✨ AI Fix</button>
+                                </div>
+                            </td>
+                            <td class="score-cell">
+                                <input type="text" autocomplete="off" class="score-box" id="poScoreMetric" readonly placeholder="—">
+                                <input type="hidden" id="poRatingDisplay">
+                            </td>
+                            <td class="ta-cell" rowspan="2" id="tlKpiCell">
+                                <div class="ta-wrapper" id="tlKpiWrapper">
+                                    <textarea id="ai-tl-kpi" oninput="autoExpand(this)" placeholder="Team Lead feedback on PO Closures &amp; Applications…"></textarea>
+                                    <button class="ai-btn" onclick="aiFix('ai-tl-kpi')">✨ AI Fix</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align:middle;"><span class="metric-name">Application Rating</span></td>
+                            <td class="score-cell">
+                                <input type="text" autocomplete="off" class="score-box" id="appScoreMetric" readonly placeholder="—">
+                                <input type="hidden" id="appRatingDisplay">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align:middle;"><span class="metric-name">Productivity &amp; Quality</span></td>
+                            <td class="ta-cell" rowspan="3" id="empMetricCell">
+                                <div class="ta-wrapper" id="empMetricWrapper">
+                                    <textarea id="ai-emp-345" oninput="autoExpand(this)" placeholder="Employee self-assessment on Productivity, Work Ethics &amp; Innovation, and Discipline…"></textarea>
+                                    <button class="ai-btn" onclick="aiFix('ai-emp-345')">✨ AI Fix</button>
+                                </div>
+                            </td>
+                            <td class="score-cell">
+                                <input type="number" autocomplete="off" class="score-box" id="pqScoreMetric" min="0" max="5" step="0.5" placeholder="—" oninput="if(parseFloat(this.value)>5)this.value=5; if(parseFloat(this.value)<0)this.value=0; calculate();">
+                            </td>
+                            <td class="ta-cell" rowspan="3" id="tlMetricCell">
+                                <div class="ta-wrapper" id="tlMetricWrapper">
+                                    <textarea id="ai-tl-345" oninput="autoExpand(this)" placeholder="Team Lead feedback on Productivity, Work Ethics &amp; Innovation, and Discipline…"></textarea>
+                                    <button class="ai-btn" onclick="aiFix('ai-tl-345')">✨ AI Fix</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align:middle;"><span class="metric-name">Work Ethics &amp; Innovation</span></td>
+                            <td class="score-cell">
+                                <input type="number" autocomplete="off" class="score-box" id="weiScoreMetric" min="0" max="5" step="0.5" placeholder="—" oninput="if(parseFloat(this.value)>5)this.value=5; if(parseFloat(this.value)<0)this.value=0; calculate();">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align:middle;"><span class="metric-name">Discipline &amp; Attendance</span></td>
+                            <td class="score-cell">
+                                <input type="text" autocomplete="off" class="score-box" id="attScoreMetric" readonly placeholder="—">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SECTION C -->
+            <div class="section-header">C. &nbsp; Areas of Development &amp; Overall Feedback
+                <span style="font-weight:400;font-size:11px;opacity:.8;"> &nbsp;(By Team Lead / Manager)</span>
+            </div>
+            <div class="section-body">
+                <div class="feedback-box">
+                    <textarea id="ai-combined" oninput="autoExpand(this)"
+                              placeholder="Additional Tasks · Areas for Development · Goals Achievement · Communication &amp; Collaboration · Training &amp; Upskilling · Overall Feedback…"
+                              style="min-height:180px;"></textarea>
+                    <button class="ai-btn" onclick="aiFix('ai-combined')">✨ AI Fix</button>
+                </div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="summary-bar">
+                <div class="sum-cell">
+                    <div class="sum-label">Overall Score</div>
+                    <div class="big-score" id="avgScore">0.00</div>
+                    <div class="score-breakdown" id="scoreBreakdown"></div>
+                </div>
+                <div class="sum-cell">
+                    <div class="sum-label">Performance Rating</div>
+                    <div class="rating-text" id="ratingText">Pending</div>
+                    <div style="font-size:9px;color:#b0bec5;margin-top:6px;">KPI 70% &nbsp;·&nbsp; Performance 30%</div>
+                </div>
+                <div class="sum-cell">
+                    <div class="esign" id="tlSignDisplay">—</div>
+                    <div class="sign-line">Authorized Signatory</div>
+                </div>
+            </div>
+
+            <div class="page-footer">
+                <div>
+                    <strong>Vizva Consultancy Services</strong> &nbsp;|&nbsp;
+                    <a href="#">www.vizvaconsultancyservices.com</a> &nbsp;|&nbsp;
+                    <a href="mailto:hr@vizvaconsultancy.com">hr@vizvaconsultancy.com</a>
+                </div>
+                <div style="font-family:'Poppins',sans-serif;font-weight:700;color:#8899a8;">Page 2 of 2</div>
+            </div>
+        
+        <!-- Footer -->
+        <div style="margin-top:18px; padding-top:10px; border-top:2px solid #000; text-align:center;">
+            <p style="font-weight:700; color:#000000; font-family:'Open Sans',sans-serif; font-size:12.5px; margin:0;">
+                If you have any questions regarding score kindly reach HR Department &ndash;
+                <a href="mailto:Hr@vizvainc.com" style="color:#000000; font-weight:700; text-decoration:underline;">Hr@vizvainc.com</a>
+            </p>
+        </div>
+</div><!-- /page-inner -->
+    </div><!-- /#page2 -->
+
+</div><!-- /.doc-area -->
+
+
+<script>
+/* ── Sync Employee Name ── */
+function syncEmpName() {
+    const n = document.getElementById('empName').value.trim();
+    const v = n ? '— ' + n + ' —' : '';
+    document.getElementById('empNameDisplay').innerText  = v;
+    document.getElementById('empNameDisplay2').innerText = v;
+}
+
+/* ── Sync Team Lead Signature ── */
+function syncTeamLeadSign() {
+    const n = document.getElementById('teamLeadName').value.trim();
+    document.getElementById('tlSignDisplay').innerText = n || '—';
+}
+
+/* ── Auto-fill Review Month ── */
+function autoUpdateMonth() {
+    const v = document.getElementById('reviewDate').value;
+    if (!v) return;
+    const d = new Date(v);
+    d.setMonth(d.getMonth() - 1);
+    const M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    const label = M[d.getMonth()] + '-' + d.getFullYear();
+    document.getElementById('monthInput').value = label;
+    const t = 'PERFORMANCE REPORT : ' + label;
+    document.getElementById('dynamicTitle').innerText  = t;
+    document.getElementById('dynamicTitle2').innerText = t;
+}
+
+/* ── KPI Calculations ── */
+const KPI_CFG = {
+    att: { target:'attWorkDays', achieved:'attPresent',  kpi:'attKPI',  rating:'attRating'  },
+    po:  { target:'poTarget',    achieved:'poAchieved',  kpi:'poKPI',   rating:'poRating'   },
+    app: { target:'appTarget',   achieved:'appAchieved', kpi:'appKPI',  rating:'appRating'  }
+};
+
+function calcKPI(type) {
+    const c   = KPI_CFG[type];
+    const tgt = parseFloat(document.getElementById(c.target).value);
+    const ach = parseFloat(document.getElementById(c.achieved).value);
+    const kEl = document.getElementById(c.kpi);
+    const rEl = document.getElementById(c.rating);
+    if (!tgt || isNaN(tgt)) { kEl.value = '—'; rEl.value = '—'; return; }
+    const a = isNaN(ach) ? 0 : ach;
+    const rating = Math.round(Math.min(5, (a/tgt)*5) * 100) / 100;
+    kEl.value = fmtN((a/tgt)*100) + '%';
+    rEl.value = fmtN(rating) + ' / 5';
+    const map = {
+        po:  { d:'poRatingDisplay',  s:'poScoreMetric'  },
+        app: { d:'appRatingDisplay', s:'appScoreMetric' }
+    };
+    if (map[type]) {
+        const dEl = document.getElementById(map[type].d);
+        const sEl = document.getElementById(map[type].s);
+        if (dEl) dEl.value = fmtN(rating) + ' / 5';
+        if (sEl) { sEl.value = fmtN(rating); calculate(); }
+    }
+    if (type === 'att') {
+        const el = document.getElementById('attScoreMetric');
+        if (el) el.value = fmtN(rating);
+    }
+    calculate();
+}
+
+/* ── Overall Score (70 / 30) ── */
+function numVal(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const n = parseFloat(el.value);
+    return (!isNaN(n) && el.value !== '') ? n : null;
+}
+
+/* ── Number formatter: strip trailing decimal zeros ── */
+function fmtN(n, dec=2) {
+    if (n === null || n === undefined || isNaN(n)) return '';
+    return parseFloat(n.toFixed(dec)).toString();
+}
+function calculate() {
+    const kv  = [numVal('poScoreMetric'), numVal('appScoreMetric')].filter(v=>v!==null);
+    const pv  = [numVal('pqScoreMetric'),  numVal('weiScoreMetric'), numVal('attScoreMetric')].filter(v=>v!==null);
+    const kA  = kv.length ? kv.reduce((a,b)=>a+b,0)/kv.length : 0;
+    const pA  = pv.length ? pv.reduce((a,b)=>a+b,0)/pv.length : 0;
+    const has = kv.length>0 || pv.length>0;
+    const avg = has ? (kA*.7)+(pA*.3) : 0;
+    document.getElementById('avgScore').innerText = fmtN(avg);
+    document.getElementById('scoreBreakdown').innerHTML = has
+        ? `KPI (70%): <b>${fmtN(kA)}</b> &nbsp;·&nbsp; Perf (30%): <b>${fmtN(pA)}</b>` : '';
+    const BANDS = [[1,'Needs Improvement','#d9534f'],[2,'Below Average','#e67e22'],[3,'Average','#f0ad4e'],
+                   [3.8,'Good','#5cb85c'],[4.5,'Very Good','#007bbd'],[5,'Excellent','#6f42c1']];
+    let lbl='Pending', clr='#b0bec5';
+    if (has) { for (const [t,l,c] of BANDS) { if (avg<=t){ lbl=l; clr=c; break; } } }
+    const r = document.getElementById('ratingText');
+    r.innerText = lbl; r.style.color = clr;
+}
+
+/* ── AI Fix ── */
+function aiFix(id) {
+    const ta = document.getElementById(id);
+    const t  = ta.value.trim(); if (!t) return;
+    const btn = ta.parentElement.querySelector('.ai-btn');
+    btn.innerText = 'Refining…';
+    setTimeout(() => {
+        let r = t.replace(/\bgood\b/gi,'exemplary').replace(/\bbad\b/gi,'suboptimal')
+                  .replace(/\bwork\b/gi,'contributions').replace(/\btalks\b/gi,'communicates')
+                  .replace(/\blate\b/gi,'delayed').replace(/\bfast\b/gi,'efficiently');
+        r = r[0].toUpperCase() + r.slice(1);
+        if (!r.endsWith('.')) r += '.';
+        ta.value = r; btn.innerText = '✨ AI Fix'; autoExpand(ta);
+    }, 400);
+}
+
+function autoExpand(el) {
+    el.style.overflow = 'hidden';
+    el.style.height   = 'auto';
+    el.style.height   = el.scrollHeight + 'px';
+}
+
+/* ── Stretch rowspan textareas ── */
+function stretchTextareas() {
+    ['ai-emp-kpi','ai-tl-kpi','ai-emp-345','ai-tl-345'].forEach(id => {
+        const tEl = document.getElementById(id);
+        if (!tEl) return;
+        tEl.style.overflow = 'hidden';
+        tEl.style.height   = 'auto';
+        tEl.style.height   = Math.max(tEl.scrollHeight, 80) + 'px';
+    });
+}
+
+
+/* ════════════════════════════════════════════
+   PAGE TAB NAVIGATION — smooth scroll to page
+════════════════════════════════════════════ */
+function showPage(num) {
+    const target = document.getElementById('page' + num);
+    const tab1   = document.getElementById('tab-page1');
+    const tab2   = document.getElementById('tab-page2');
+
+    if (!target) return;
+
+    /* Update active tab */
+    tab1.classList.toggle('active', num === 1);
+    tab2.classList.toggle('active', num === 2);
+
+    /* Smooth scroll to the target page */
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* Highlight active tab on scroll */
+window.addEventListener('scroll', () => {
+    const page1 = document.getElementById('page1');
+    const page2 = document.getElementById('page2');
+    const tab1  = document.getElementById('tab-page1');
+    const tab2  = document.getElementById('tab-page2');
+    if (!page1 || !page2) return;
+    const mid = window.scrollY + window.innerHeight / 2;
+    const p2Top = page2.getBoundingClientRect().top + window.scrollY;
+    if (mid >= p2Top) {
+        tab1.classList.remove('active');
+        tab2.classList.add('active');
+    } else {
+        tab1.classList.add('active');
+        tab2.classList.remove('active');
+    }
+});
+
+
+window.addEventListener('load', () => {
+    /* Ensure both pages and strip are always visible */
+    const p1 = document.getElementById('page1');
+    const p2 = document.getElementById('page2');
+    const strip = document.querySelector('.page-break-strip');
+    if (p1)    p1.style.display    = '';
+    if (p2)    p2.style.display    = '';
+    if (strip) strip.style.display = '';
+    setTimeout(stretchTextareas, 120);
+    syncEmpName();
+    syncTeamLeadSign();
+});
+window.addEventListener('resize', () => {
+    stretchTextareas();
+    ['ai-combined'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) autoExpand(el);
+    });
+});
+
+/* ════════════════════════════════════════════
+   PDF EXPORT — 4K / A4
+════════════════════════════════════════════ */
+async function exportPDF() {
+    const overlay = document.getElementById('pdf-overlay');
+    const msgEl   = document.getElementById('pdf-msg');
+    overlay.classList.add('show');
+
+    const { jsPDF } = window.jspdf;
+    const pdf   = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+    const A4W   = 210, A4H = 297, SCALE = 4;
+
+    /* Both pages always visible — no need to toggle display */
+    const page1El = document.getElementById('page1');
+    const page2El = document.getElementById('page2');
+    const stripEl = document.querySelector('.page-break-strip');
+
+    const jobs = [
+        {id:'page1-inner', msg:'Rendering Page 1 of 2…'},
+        {id:'page2-inner', msg:'Rendering Page 2 of 2…'}
+    ];
+
+    for (let i=0; i<jobs.length; i++) {
+        msgEl.textContent = jobs[i].msg;
+        await new Promise(r=>setTimeout(r,50));
+
+        const el = document.getElementById(jobs[i].id);
+
+        const canvas = await html2canvas(el, {
+            scale: SCALE,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            onclone: (doc) => {
+                /* Hide screen-only elements */
+                doc.querySelectorAll('.ai-btn,.corner-badge,.page-break-strip,.toolbar').forEach(n=>n.style.display='none');
+
+                /* Replace all visible inputs with styled divs */
+                doc.querySelectorAll('input:not([type="hidden"])').forEach(inp => {
+                    const div = doc.createElement('div');
+                    const isCalc   = inp.classList.contains('kpi-calc');
+                    const isRating = inp.classList.contains('kpi-rating');
+                    const isScore  = inp.classList.contains('score-box');
+                    Object.assign(div.style, {
+                        display:'block',
+                        width:      isScore ? '54px' : '100%',
+                        margin:     isScore ? '0 auto' : '0',
+                        minHeight:  isScore ? '36px' : '30px',
+                        padding:    isScore ? '5px 2px' : '6px 10px',
+                        borderRadius: isScore ? '6px' : '4px',
+                        border: isCalc   ? '1px solid #b8d9ed'
+                              : isRating ? '1px solid #b5d9b5'
+                              : isScore  ? '2px solid #007bbd'
+                              :            '1px solid #c8d0d8',
+                        background: isCalc   ? '#eaf4fb'
+                                  : isRating ? '#eef8ee'
+                                  : isScore  ? '#eaf4fb'
+                                  :            '#fff',
+                        color: isCalc   ? '#007bbd'
+                             : isRating ? '#2d7a2d'
+                             : isScore  ? '#007bbd'
+                             :            '#2c3e50',
+                        fontWeight: (isCalc||isRating||isScore) ? '700' : '400',
+                        fontSize:   isScore ? '14px' : '12.5px',
+                        fontFamily: "'Open Sans',sans-serif",
+                        boxSizing:  'border-box',
+                        textAlign:  isScore ? 'center' : 'left',
+                        lineHeight: '1.4',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak:  'break-word',
+                    });
+                    div.innerText = inp.value.trim() || ' ';
+                    inp.parentNode.replaceChild(div, inp);
+                });
+                doc.querySelectorAll('input[type="hidden"]').forEach(n=>n.remove());
+
+                /* Replace textareas with styled divs */
+                doc.querySelectorAll('textarea').forEach(ta => {
+                    const div = doc.createElement('div');
+                    Object.assign(div.style, {
+                        width:'100%', border:'1px solid #ccd4db',
+                        borderRadius:'4px', padding:'8px',
+                        fontFamily:"'Open Sans',sans-serif",
+                        fontSize:'11.5px', lineHeight:'1.55',
+                        whiteSpace:'pre-wrap', wordBreak:'break-word',
+                        boxSizing:'border-box', color:'#2c3e50',
+                        minHeight:'60px',
+                    });
+                    div.innerText = ta.value.trim() || ' ';
+                    ta.parentNode.replaceChild(div, ta);
+                });
+
+                /* Convert absolute wrappers to static so PDF captures them */
+                doc.querySelectorAll('.ta-wrapper').forEach(w=>{
+                    Object.assign(w.style,{position:'static',height:'auto'});
+                });
+                doc.querySelectorAll('.ta-cell').forEach(c=>{ c.style.padding='8px'; });
+            }
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg',1.0);
+        const ratio   = canvas.height / canvas.width;
+        const imgH    = A4W * ratio;
+
+        if (i>0) pdf.addPage();
+
+        if (imgH <= A4H) {
+            /* Page shorter than A4 — top-align with small margin */
+            pdf.addImage(imgData,'JPEG',0,0,A4W,imgH,'','FAST');
+        } else {
+            /* Scale to fill full A4 height */
+            const sc  = A4H / imgH;
+            const sw  = A4W * sc;
+            pdf.addImage(imgData,'JPEG',(A4W-sw)/2,0,sw,A4H,'','FAST');
+        }
+    }
+
+    msgEl.textContent = 'Saving PDF…';
+    await new Promise(r=>setTimeout(r,80));
+    const empName    = document.getElementById('empName').value.trim()        || 'Employee';
+    const desig      = document.getElementById('designationInput').value.trim() || 'Designation';
+    const period     = document.getElementById('monthInput').value.trim()        || 'Period';
+    const branch     = document.getElementById('branchInput').value.trim()       || 'Branch';
+    const fileName   = `${empName} - ${desig} - ${period} - ${branch}`;
+    pdf.save(`${fileName}.pdf`);
+    overlay.classList.remove('show');
+}
+</script>
+</body>
+</html>
