@@ -3051,6 +3051,149 @@ function enhanceEmbeddedIframe(config) {
     "    result = await client.from(CONFIG.table).insert(buildRow(serializeDocument()));\n" +
     "    if (result.error) throw result.error;\n" +
     "  }\n" +
+    "  function getOverlay() {\n" +
+    "    return document.querySelector('[id^=\"pdf-overlay\"]');\n" +
+    "  }\n" +
+    "  function getOverlayMessage() {\n" +
+    "    var overlay = getOverlay();\n" +
+    "    return overlay ? overlay.querySelector('[id^=\"pdf-msg\"], .overlay-msg') : null;\n" +
+    "  }\n" +
+    "  function setOverlayState(visible, message) {\n" +
+    "    var overlay = getOverlay();\n" +
+    "    var msg = getOverlayMessage();\n" +
+    "    if (!overlay) return;\n" +
+    "    if (msg && message) msg.textContent = message;\n" +
+    "    if (visible) overlay.classList.add('show');\n" +
+    "    else overlay.classList.remove('show');\n" +
+    "  }\n" +
+    "  function makePdfName(payload) {\n" +
+    "    var recordName = findValue(['empName', 'employeeName', 'candidateName', 'fullName'], payload) || CONFIG.label;\n" +
+    "    var review = findValue(['monthInput', 'reviewDate', 'reviewMonth', 'month'], payload);\n" +
+    "    var raw = (recordName + ' - ' + CONFIG.label + (review ? ' - ' + review : '')).replace(/[\\\\/:*?\"<>|]+/g, ' ').replace(/\\s+/g, ' ').trim();\n" +
+    "    return (raw || CONFIG.label) + '.pdf';\n" +
+    "  }\n" +
+    "  function exportStructuredPdf() {\n" +
+    "    var payload = serializeDocument();\n" +
+    "    var jsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : (window.jsPDF || null);\n" +
+    "    var doc;\n" +
+    "    var pageWidth;\n" +
+    "    var pageHeight;\n" +
+    "    var margin = 16;\n" +
+    "    var y = margin;\n" +
+    "    var line = 6;\n" +
+    "    var sectionGap = 4;\n" +
+    "    var bodyWidth;\n" +
+    "    var title;\n" +
+    "    var reportDate;\n" +
+    "    var period;\n" +
+    "    var recordName;\n" +
+    "    if (!jsPDFCtor) throw new Error('jsPDF is not available.');\n" +
+    "    doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });\n" +
+    "    pageWidth = doc.internal.pageSize.getWidth();\n" +
+    "    pageHeight = doc.internal.pageSize.getHeight();\n" +
+    "    bodyWidth = pageWidth - (margin * 2);\n" +
+    "    title = CONFIG.label === 'BSR' ? 'BSR Performance Report' : 'Application Performance Report';\n" +
+    "    reportDate = findValue(['reviewDate'], payload);\n" +
+    "    period = findValue(['monthInput', 'reviewMonth', 'month'], payload);\n" +
+    "    recordName = findValue(['empName', 'employeeName', 'candidateName', 'fullName'], payload);\n" +
+    "    function newPageIfNeeded(required) {\n" +
+    "      if (y + required <= pageHeight - margin) return;\n" +
+    "      doc.addPage();\n" +
+    "      y = margin;\n" +
+    "    }\n" +
+    "    function drawHeader() {\n" +
+    "      doc.setFont('helvetica', 'bold');\n" +
+    "      doc.setFontSize(16);\n" +
+    "      doc.text(title, margin, y);\n" +
+    "      y += 8;\n" +
+    "      doc.setFont('helvetica', 'normal');\n" +
+    "      doc.setFontSize(10);\n" +
+    "      if (recordName) { doc.text('Employee: ' + recordName, margin, y); y += 5; }\n" +
+    "      if (period) { doc.text('Review Period: ' + period, margin, y); y += 5; }\n" +
+    "      if (reportDate) { doc.text('Date of Review: ' + reportDate, margin, y); y += 5; }\n" +
+    "      y += 2;\n" +
+    "      doc.setDrawColor(0, 123, 189);\n" +
+    "      doc.line(margin, y, pageWidth - margin, y);\n" +
+    "      y += 7;\n" +
+    "    }\n" +
+    "    function section(name) {\n" +
+    "      newPageIfNeeded(12);\n" +
+    "      doc.setFont('helvetica', 'bold');\n" +
+    "      doc.setFontSize(12);\n" +
+    "      doc.text(name, margin, y);\n" +
+    "      y += 6;\n" +
+    "      doc.setFont('helvetica', 'normal');\n" +
+    "      doc.setFontSize(10);\n" +
+    "    }\n" +
+    "    function textBlock(label, value) {\n" +
+    "      var clean = cleanValue(value);\n" +
+    "      var lines;\n" +
+    "      if (!clean) return;\n" +
+    "      lines = doc.splitTextToSize((label ? label + ': ' : '') + clean, bodyWidth);\n" +
+    "      newPageIfNeeded(lines.length * line + 2);\n" +
+    "      doc.text(lines, margin, y);\n" +
+    "      y += (lines.length * line) + 1;\n" +
+    "    }\n" +
+    "    function kvRows(rows) {\n" +
+    "      rows.forEach(function(row) {\n" +
+    "        var label = row[0];\n" +
+    "        var value = cleanValue(row[1]);\n" +
+    "        var wrapped;\n" +
+    "        if (!value) return;\n" +
+    "        wrapped = doc.splitTextToSize(value, bodyWidth - 42);\n" +
+    "        newPageIfNeeded(Math.max(1, wrapped.length) * line + 1);\n" +
+    "        doc.setFont('helvetica', 'bold');\n" +
+    "        doc.text(label + ':', margin, y);\n" +
+    "        doc.setFont('helvetica', 'normal');\n" +
+    "        doc.text(wrapped, margin + 42, y);\n" +
+    "        y += (Math.max(1, wrapped.length) * line) + 1;\n" +
+    "      });\n" +
+    "      y += sectionGap;\n" +
+    "    }\n" +
+    "    function metricSection(name, rows) {\n" +
+    "      section(name);\n" +
+    "      rows.forEach(function(row) {\n" +
+    "        var lineText = row.filter(function(part) { return cleanValue(part); }).join(' | ');\n" +
+    "        if (!lineText) return;\n" +
+    "        textBlock('', lineText);\n" +
+    "      });\n" +
+    "      y += sectionGap;\n" +
+    "    }\n" +
+    "    drawHeader();\n" +
+    "    section('Employee Details');\n" +
+    "    kvRows([\n" +
+    "      ['Employee ID', findValue(['empID'], payload)],\n" +
+    "      ['Department', findValue(['deptInput'], payload)],\n" +
+    "      ['Branch / Location', findValue(['branchInput'], payload)],\n" +
+    "      [CONFIG.label === 'BSR' ? 'BSR / Team Lead' : 'Team Lead / Manager', findValue(['teamLeadName'], payload)],\n" +
+    "      ['Designation', findValue(['designationInput'], payload)]\n" +
+    "    ]);\n" +
+    "    metricSection('KPI Metrics', CONFIG.table === 'bsr_submissions' ? [\n" +
+    "      ['Attendance', 'Target ' + findValue(['attWorkDays'], payload), 'Achieved ' + findValue(['attPresent'], payload), 'KPI ' + findValue(['attKPI'], payload), 'Rating ' + findValue(['attRating'], payload)],\n" +
+    "      ['Interview', 'Target ' + findValue(['intTarget'], payload), 'Achieved ' + findValue(['intAchieved'], payload), 'KPI ' + findValue(['intKPI'], payload), 'Rating ' + findValue(['intRating'], payload)],\n" +
+    "      ['Submission', 'Target ' + findValue(['subTarget'], payload), 'Achieved ' + findValue(['subAchieved'], payload), 'KPI ' + findValue(['subKPI'], payload), 'Rating ' + findValue(['subRating'], payload)],\n" +
+    "      ['PO', 'Target ' + findValue(['poTarget'], payload), 'Achieved ' + findValue(['poAchieved'], payload), 'KPI ' + findValue(['poKPI'], payload), 'Rating ' + findValue(['poRating'], payload)]\n" +
+    "    ] : [\n" +
+    "      ['Attendance', 'Target ' + findValue(['attWorkDays'], payload), 'Achieved ' + findValue(['attPresent'], payload), 'KPI ' + findValue(['attKPI'], payload), 'Rating ' + findValue(['attRating'], payload)],\n" +
+    "      ['PO', 'Target ' + findValue(['poTarget'], payload), 'Achieved ' + findValue(['poAchieved'], payload), 'KPI ' + findValue(['poKPI'], payload), 'Rating ' + findValue(['poRating'], payload)],\n" +
+    "      ['Application', 'Target ' + findValue(['appTarget'], payload), 'Achieved ' + findValue(['appAchieved'], payload), 'KPI ' + findValue(['appKPI'], payload), 'Rating ' + findValue(['appRating'], payload)]\n" +
+    "    ]);\n" +
+    "    section('Feedback');\n" +
+    "    textBlock('Employee Self-Assessment', findValue(['ai-emp-kpi'], payload));\n" +
+    "    textBlock(CONFIG.label === 'BSR' ? 'BSR / Team Lead Feedback' : 'Team Lead Feedback', findValue(['ai-tl-kpi'], payload));\n" +
+    "    textBlock('Employee Development Feedback', findValue(['ai-emp-345'], payload));\n" +
+    "    textBlock(CONFIG.label === 'BSR' ? 'BSR / Team Lead Development Feedback' : 'Team Lead Development Feedback', findValue(['ai-tl-345'], payload));\n" +
+    "    textBlock('Final Combined Feedback', findValue(['ai-combined'], payload));\n" +
+    "    y += sectionGap;\n" +
+    "    section('Summary');\n" +
+    "    kvRows([\n" +
+    "      ['Overall Average Score', findValue(['avgScore'], payload)],\n" +
+    "      ['Score Breakdown', findValue(['scoreBreakdown'], payload)],\n" +
+    "      ['Overall Rating', findValue(['ratingText'], payload)],\n" +
+    "      ['Authorized Signatory', findValue(['tlSignDisplay'], payload)]\n" +
+    "    ]);\n" +
+    "    doc.save(makePdfName(payload));\n" +
+    "  }\n" +
     "  function wireExport() {\n" +
     "    if (window.__vcsExportWrapped) return;\n" +
     "    if (typeof window.exportPDF !== 'function') {\n" +
@@ -3063,23 +3206,24 @@ function enhanceEmbeddedIframe(config) {
     "    normalizeBSRSuggestionText();\n" +
     "    ensureButtonLabel();\n" +
     "    window.__vcsExportWrapped = true;\n" +
-    "    var originalExport = window.exportPDF.bind(window);\n" +
     "    window.exportPDF = async function() {\n" +
     "      var button = getButton();\n" +
     "      if (window.__vcsExportInFlight) return;\n" +
     "      window.__vcsExportInFlight = true;\n" +
     "      setBusy(button, true);\n" +
+    "      setOverlayState(true, 'Saving and generating PDF...');\n" +
     "      try {\n" +
     "        await persistSubmission();\n" +
+    "        exportStructuredPdf();\n" +
     "      } catch (error) {\n" +
     "        console.error(error);\n" +
-    "        alert('Unable to save this ' + CONFIG.label + ' form right now. Please try again.');\n" +
+    "        alert('Unable to export this ' + CONFIG.label + ' PDF right now. Please try again.');\n" +
     "        return;\n" +
     "      } finally {\n" +
     "        window.__vcsExportInFlight = false;\n" +
     "        setBusy(button, false);\n" +
+    "        setOverlayState(false);\n" +
     "      }\n" +
-    "      return originalExport.apply(this, arguments);\n" +
     "    };\n" +
     "  }\n" +
     "  function runTextCleanup() {\n" +
