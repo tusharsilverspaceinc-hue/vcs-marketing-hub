@@ -2116,6 +2116,26 @@ function buildGlassdoorString() {
 
   return parts.filter(Boolean).join(' ').trim();
 }
+
+function buildZipRecruiterString() {
+  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).slice(0, 4).map(quoteIfNeeded);
+  const mustTerms = uniqueTerms(tags.must || []).slice(0, 3).map(quoteIfNeeded);
+  const anyTerms = uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
+  const companyTerms = uniqueTerms(tags.company || []).slice(0, 1).map(quoteIfNeeded);
+  const visaValue = document.querySelector('input[name="h1bFilter"]:checked')?.value || '';
+
+  const titleGroup = buildLinkedInOrGroup(titleTerms);
+  const skillTerms = mustTerms.length ? mustTerms : anyTerms;
+  const parts = [];
+
+  if (titleGroup) parts.push(titleGroup);
+  if (skillTerms.length) parts.push(skillTerms.join(' '));
+  if (companyTerms.length) parts.push(companyTerms[0]);
+  if (visaValue === 'yes') parts.push('"visa sponsorship"');
+  if (visaValue === 'no') parts.push('"no sponsorship"');
+
+  return parts.filter(Boolean).join(' ').trim();
+}
 // Helper: get must-have skills as simple space-joined string
 function getMustSkillsSimple() {
   const vals = [...document.querySelectorAll('#mustTagWrap .tag')].map(el=>el.firstChild?.textContent?.trim()||'').filter(Boolean);
@@ -2174,19 +2194,7 @@ const generators = {
   },
 
   // ── 7. ZipRecruiter: Quotes + AND/OR supported natively
-  'ziprecruiter': () => {
-    const title  = buildTitleBlock();
-    const skills = buildSkillsBlock();
-    const loc    = buildLocationBlock('ziprecruiter');
-    const visa   = buildVisaBlock();
-    let parts = [];
-    if (title)          parts.push(title);
-    if (skills.include) parts.push(skills.include);
-    if (visa)           parts.push(visa);
-    let str = parts.join(' AND ');
-    if (skills.exclude) str += ' ' + skills.exclude;
-    return str.trim();
-  },
+  'ziprecruiter': () => buildZipRecruiterString(),
 
   // ── 8. Google X-Ray Jobs: site:linkedin.com/jobs/ + full boolean
   'googlexray': () => {
@@ -2242,8 +2250,9 @@ const platformMeta = {
   'ziprecruiter': { name:'ZipRecruiter',  url: q => {
     const days = getDatePostedDays();
     const daysParam = days !== null && days > 0 ? `&days=${days}` : '';
-    return `https://www.ziprecruiter.com/jobs-search?search=${encodeURIComponent(q)}&location=United+States${daysParam}`;
-  }, tip:'AND/OR + "quotes" supported natively. Avoid long NOT chains — may suppress results.' },
+    const location = document.getElementById('stateSelect').value || 'United States';
+    return `https://www.ziprecruiter.com/jobs-search?search=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${daysParam}`;
+  }, tip:'ZipRecruiter performs better with lighter keyword queries. This version uses title, top skills, optional company, and simple sponsorship hints only.' },
   'googlexray':   { name:'Google X-Ray (Jobs)', url: q => `https://www.google.com/search?gl=us&hl=en&q=${encodeURIComponent(q)}`,
                     tip:'X-Rays LinkedIn job postings via Google with U.S.-only targeting. Uses "United States" explicitly, and if you pick a state it requires both the state and U.S. in the search.' },
   'indeed':       { name:'Indeed',        url: q => {
