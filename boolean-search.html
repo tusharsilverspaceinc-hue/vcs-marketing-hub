@@ -2118,7 +2118,7 @@ function buildGlassdoorString() {
 }
 
 function buildZipRecruiterString() {
-  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).slice(0, 4).map(quoteIfNeeded);
+  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).map(quoteIfNeeded);
   const mustTerms = uniqueTerms(tags.must || []).slice(0, 3).map(quoteIfNeeded);
   const anyTerms = uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
   const companyTerms = uniqueTerms(tags.company || []).slice(0, 1).map(quoteIfNeeded);
