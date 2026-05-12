@@ -2099,7 +2099,7 @@ function buildLinkedInString() {
 }
 
 function buildGlassdoorString() {
-  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).slice(0, 4).map(quoteIfNeeded);
+  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).map(quoteIfNeeded);
   const mustTerms = uniqueTerms(tags.must || []).slice(0, 2).map(quoteIfNeeded);
   const anyTerms = uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
   const locationTerms = buildLinkedInLooseLocation().slice(0, 2);
