@@ -2192,7 +2192,7 @@ const generators = {
   'googlexray': () => {
     const core     = assembleString('', 'google');
     const selectedState = document.getElementById('stateSelect').value;
-    const usGeo = selectedState ? `("${selectedState}" OR "United States" OR USA)` : '("United States" OR USA)';
+    const usGeo = selectedState ? `("${selectedState}" AND "United States")` : '"United States"';
     const fresh    = document.getElementById('freshnessSelect') ? document.getElementById('freshnessSelect').value : '';
     const afterDate = getGoogleAfterDate ? getGoogleAfterDate() : '';
     let dateStr = '';
@@ -2244,8 +2244,8 @@ const platformMeta = {
     const daysParam = days !== null && days > 0 ? `&days=${days}` : '';
     return `https://www.ziprecruiter.com/jobs-search?search=${encodeURIComponent(q)}&location=United+States${daysParam}`;
   }, tip:'AND/OR + "quotes" supported natively. Avoid long NOT chains — may suppress results.' },
-  'googlexray':   { name:'Google X-Ray (Jobs)', url: q => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
-                    tip:'X-Rays LinkedIn job postings via Google. Full boolean + site:linkedin.com/jobs/view/ — finds real jobs not visible in LinkedIn search.' },
+  'googlexray':   { name:'Google X-Ray (Jobs)', url: q => `https://www.google.com/search?gl=us&hl=en&q=${encodeURIComponent(q)}`,
+                    tip:'X-Rays LinkedIn job postings via Google with U.S.-only targeting. Uses "United States" explicitly, and if you pick a state it requires both the state and U.S. in the search.' },
   'indeed':       { name:'Indeed',        url: q => {
     const days = getDatePostedDays();
     const fromage = days !== null && days > 0 ? `&fromage=${days}` : '';
