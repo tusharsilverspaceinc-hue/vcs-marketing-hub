@@ -2559,6 +2559,15 @@ function buildLinkedInHiringString(titleTerms, roleTerms, locationTerm, companyT
   }, 220);
 }
 
+function buildLinkedInPostsString(roleTerms, state, companyTerm) {
+  const compactRoleGroup = buildHiringOrGroup(roleTerms.slice(0, 2));
+  const hiringPostGroup = '("hiring for" OR "we are hiring" OR "now hiring")';
+  const parts = [compactRoleGroup, hiringPostGroup];
+  if (state) parts.push(`"${state}"`);
+  if (companyTerm) parts.push(companyTerm);
+  return parts.filter(Boolean).join(' AND ');
+}
+
 function buildHiringPeopleUrl(query, state) {
   const location = state || 'United States';
   return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(query)}&origin=GLOBAL_SEARCH_HEADER&geoUrn=&location=${encodeURIComponent(location)}`;
@@ -2621,7 +2630,6 @@ function generateHiringSearchV2() {
   const peopleRoleTerms = buildHiringRoleGroup(role, syns, 2);
   const peopleRoleKeywords = buildHiringRoleSignal(role, syns);
   const roleOR = buildHiringOrGroup(buildHiringRoleGroup(role, syns, 4));
-  const searchLocationTerm = state ? `"${state}"` : '"United States"';
   const usGeoTerm = state ? `("${state}" OR "United States" OR USA)` : '("United States" OR USA)';
   const companyTerm = company ? `"${company}"` : '';
   const recruiterTitles = [
@@ -2653,14 +2661,7 @@ function generateHiringSearchV2() {
 
   const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, peopleRoleTerms, '', companyTerm);
   const linkedInManagerBool = buildLinkedInHiringString(managerTitles, peopleRoleTerms, '', companyTerm);
-  const linkedInPostsBool = [
-    roleOR,
-    hiringPhraseGroup,
-    searchLocationTerm,
-    companyTerm,
-    'NOT "open to work"',
-    'NOT "job seeker"'
-  ].filter(Boolean).join(' AND ');
+  const linkedInPostsBool = buildLinkedInPostsString(buildHiringRoleGroup(role, syns, 2), state, companyTerm);
   const googleBool = [
     roleOR,
     '("we are hiring" OR "now hiring" OR "job opening" OR "open position" OR "hiring for" OR "opening on my team")',
