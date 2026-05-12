@@ -2119,17 +2119,18 @@ function buildGlassdoorString() {
 
 function buildZipRecruiterString() {
   const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).map(quoteIfNeeded);
-  const mustTerms = uniqueTerms(tags.must || []).slice(0, 3).map(quoteIfNeeded);
+  const mustTerms = uniqueTerms(tags.must || []).slice(0, 2).map(quoteIfNeeded);
   const anyTerms = uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
   const companyTerms = uniqueTerms(tags.company || []).slice(0, 1).map(quoteIfNeeded);
   const visaValue = document.querySelector('input[name="h1bFilter"]:checked')?.value || '';
 
   const titleGroup = buildLinkedInOrGroup(titleTerms);
   const skillTerms = mustTerms.length ? mustTerms : anyTerms;
+  const skillGroup = buildLinkedInOrGroup(skillTerms);
   const parts = [];
 
   if (titleGroup) parts.push(titleGroup);
-  if (skillTerms.length) parts.push(skillTerms.join(' '));
+  if (skillGroup) parts.push(skillGroup);
   if (companyTerms.length) parts.push(companyTerms[0]);
   if (visaValue === 'yes') parts.push('"visa sponsorship"');
   if (visaValue === 'no') parts.push('"no sponsorship"');
