@@ -2523,6 +2523,10 @@ function buildHiringRoleSignal(role, syns = []) {
   return [role];
 }
 
+function buildHiringRoleGroup(role, syns = [], maxTerms = 2) {
+  return uniqueTerms([role, ...syns]).filter(Boolean).slice(0, maxTerms);
+}
+
 function buildHiringMetaHtml(str, limit) {
   const len = str.length;
   if (len <= 179) return `<span style="color:#22c55e;">✅ ${len} / ${limit} chars</span>`;
@@ -2546,9 +2550,9 @@ function shrinkHiringParts(parts, limit) {
 function buildLinkedInHiringString(titleTerms, roleTerms, locationTerm, companyTerm) {
   return shrinkHiringParts({
     titleTerms: [...titleTerms].slice(0, 3),
-    roleTerms: [...roleTerms].slice(0, 1),
+    roleTerms: [...roleTerms].slice(0, 2),
     titles: buildHiringOrGroup(titleTerms.slice(0, 3)),
-    role: buildHiringOrGroup(roleTerms.slice(0, 1)),
+    role: buildHiringOrGroup(roleTerms.slice(0, 2)),
     location: locationTerm,
     company: companyTerm,
     notTerms: []
@@ -2614,22 +2618,38 @@ function generateHiringSearchV2() {
   renderHiringPeopleCard();
 
   const syns = SYN[role] || [];
-  const peopleRoleTerms = buildHiringRoleSignal(role, syns);
-  const roleQ = `"${role}"`;
-  const roleOR = buildHiringOrGroup([role, ...syns.slice(0, 3)]);
+  const peopleRoleTerms = buildHiringRoleGroup(role, syns, 2);
+  const peopleRoleKeywords = buildHiringRoleSignal(role, syns);
+  const roleOR = buildHiringOrGroup(buildHiringRoleGroup(role, syns, 4));
   const searchLocationTerm = state ? `"${state}"` : '"United States"';
+  const usGeoTerm = state ? `("${state}" OR "United States" OR USA)` : '("United States" OR USA)';
   const companyTerm = company ? `"${company}"` : '';
   const recruiterTitles = [
     'Recruiter',
     'Technical Recruiter',
     'Talent Acquisition',
     'Talent Partner',
+    'Talent Acquisition Specialist',
+    'Talent Acquisition Manager',
+    'Corporate Recruiter',
+    'Senior Recruiter',
+    'HR Manager',
     'VP of Recruitment',
     'Account Manager',
     'Hiring Manager'
   ];
-  const managerTitles = ['Hiring Manager', 'Engineering Manager', 'Director', 'VP'];
-  const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "open role")';
+  const managerTitles = [
+    'Hiring Manager',
+    'Engineering Manager',
+    'Head of Engineering',
+    'Director of Engineering',
+    'Director',
+    'VP',
+    'VP Engineering',
+    'Account Manager'
+  ];
+  const hiringPhraseGroup = '("we are hiring" OR "now hiring" OR "actively hiring" OR "hiring for" OR "looking to hire" OR "building my team")';
+  const hiringRoleSignalGroup = buildHiringOrGroup(peopleRoleKeywords);
 
   const linkedInRecruiterBool = buildLinkedInHiringString(recruiterTitles, peopleRoleTerms, '', companyTerm);
   const linkedInManagerBool = buildLinkedInHiringString(managerTitles, peopleRoleTerms, '', companyTerm);
@@ -2644,14 +2664,16 @@ function generateHiringSearchV2() {
   const googleBool = [
     roleOR,
     '("we are hiring" OR "now hiring" OR "job opening" OR "open position" OR "hiring for" OR "opening on my team")',
-    searchLocationTerm,
+    usGeoTerm,
     companyTerm,
     '-site:linkedin.com -site:indeed.com -site:glassdoor.com -site:ziprecruiter.com -site:monster.com -site:careerbuilder.com -site:dice.com -site:simplyhired.com'
   ].filter(Boolean).join(' ');
   const xRayBool = [
     'site:linkedin.com/in',
-    roleQ,
-    searchLocationTerm,
+    buildHiringOrGroup(recruiterTitles.slice(0, 6)),
+    roleOR,
+    hiringRoleSignalGroup,
+    usGeoTerm,
     companyTerm,
     '-"open to work"',
     '-"job seeker"'
@@ -2660,7 +2682,7 @@ function generateHiringSearchV2() {
     'site:linkedin.com/posts/',
     roleOR,
     hiringPhraseGroup,
-    searchLocationTerm,
+    usGeoTerm,
     companyTerm,
     '-"open to work"',
     '-"job seeker"'
