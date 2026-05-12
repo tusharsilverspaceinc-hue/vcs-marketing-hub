@@ -1594,6 +1594,7 @@ const PRESETS = {
   fullStackEngineer: { title: 'Full Stack Engineer', alts: ['Full Stack Developer','Software Engineer','Web Engineer','Product Engineer','Application Engineer','MERN Stack Engineer','Cloud Full Stack Engineer'], must: ['JavaScript', 'React', 'Node.js', 'REST API', 'SQL'], any: ['TypeScript', 'AWS', 'Docker', 'Next.js', 'GraphQL', 'CI/CD'], edu: [], certs: [] },
   hardwareEngineer: { title: 'Hardware Engineer', alts: ['Electrical Hardware Engineer','Embedded Hardware Engineer','VLSI Engineer','PCB Design Engineer','Digital Hardware Engineer','Hardware Design Engineer','Electronics Engineer'], must: ['PCB Design', 'Embedded Systems', 'FPGA', 'Circuit Design', 'Hardware Testing'], any: ['VHDL', 'Verilog', 'Altium', 'MATLAB', 'Signal Processing', 'ARM', 'CAD'], edu: ["Bachelor's"], certs: [] },
   javaDev: { title: 'Java Developer', alts: ['Java Engineer','Backend Java Developer','J2EE Developer','Spring Boot Developer','Java Full Stack Developer','Software Engineer Java','Microservices Java Developer'], must: ['Java', 'Spring Boot', 'Microservices', 'REST API', 'SQL'], any: ['Hibernate', 'Kafka', 'AWS', 'Docker', 'JUnit', 'Maven'], edu: [], certs: [] },
+  marketingAnalyst: { title: 'Marketing Analyst', alts: ['Digital Marketing Analyst','Performance Marketing Analyst','Growth Marketing Analyst','Marketing Data Analyst','Campaign Analyst','CRM Marketing Analyst','Marketing Insights Analyst'], must: ['Marketing Analytics', 'Google Analytics', 'Campaign Analysis', 'Excel', 'Reporting'], any: ['SQL', 'Tableau', 'Power BI', 'SEO', 'SEM', 'A/B Testing', 'CRM'], edu: ["Bachelor's"], certs: ['Google Analytics'] },
   mlEngineer: { title: 'ML Engineer', alts: ['Machine Learning Engineer','AI Engineer','Applied ML Engineer','MLOps Engineer','Deep Learning Engineer','Computer Vision Engineer','NLP Engineer'], must: ['Python', 'Machine Learning', 'Deep Learning', 'PyTorch', 'Model Deployment'], any: ['TensorFlow', 'MLOps', 'Docker', 'AWS', 'NLP', 'Computer Vision'], edu: ["Master's", 'PhD'], certs: [] },
   muleSoftDev: { title: 'MuleSoft Developer', alts: ['MuleSoft Integration Developer','MuleSoft Architect','API Integration Developer','Anypoint Platform Developer','MuleSoft Consultant','MuleSoft Engineer','Integration Platform Developer'], must: ['MuleSoft', 'Anypoint Platform', 'REST API', 'RAML', 'Integration'], any: ['SOAP', 'Java', 'Salesforce', 'CloudHub', 'DataWeave', 'API Gateway', 'JSON'], edu: [], certs: ['MuleSoft CSA'] },
   networkEngineer: { title: 'Network Engineer', alts: ['Network Infrastructure Engineer','Senior Network Engineer','Network Administrator','WAN Engineer','LAN Engineer','Cloud Network Engineer','Network Architect'], must: ['Cisco', 'Routing', 'Switching', 'TCP/IP', 'Network Security'], any: ['BGP', 'OSPF', 'Firewalls', 'VPN', 'SD-WAN', 'Juniper', 'AWS Networking'], edu: [], certs: ['CCNA', 'CCNP'] },
@@ -1606,6 +1607,27 @@ const PRESETS = {
   softwareEngineer: { title: 'Software Engineer', alts: ['Software Developer','Senior Software Engineer','Staff Engineer','Application Engineer','Backend Engineer','Full Stack Software Engineer','Systems Software Engineer'], must: ['Software Engineering', 'Data Structures', 'Algorithms', 'Git', 'REST API'], any: ['Java', 'Python', 'JavaScript', 'Go', 'AWS', 'Kubernetes', 'SQL'], edu: ["Bachelor's"], certs: [] },
   supplyChainAnalyst: { title: 'Supply Chain Analyst', alts: ['Supply Chain Specialist','Logistics Analyst','Procurement Analyst','Operations Analyst Supply Chain','SCM Analyst','Inventory Analyst','Demand Planning Analyst'], must: ['Supply Chain', 'Inventory Management', 'Forecasting', 'ERP', 'SAP'], any: ['Excel', 'SQL', 'Power BI', 'Tableau', 'Logistics', 'Procurement', 'S&OP'], edu: ["Bachelor's"], certs: ['APICS', 'CSCP'] }
 };
+
+function ensureMarketingAnalystPresetOption() {
+  const dropdown = document.getElementById('presetDropdown');
+  if (!dropdown || dropdown.querySelector('option[value="marketingAnalyst"]')) return;
+
+  const businessGroup = Array.from(dropdown.querySelectorAll('optgroup')).find(group =>
+    group.label.includes('Business')
+  );
+  if (!businessGroup) return;
+
+  const option = document.createElement('option');
+  option.value = 'marketingAnalyst';
+  option.textContent = 'Marketing Analyst';
+
+  const projectManagerOption = businessGroup.querySelector('option[value="projectManager"]');
+  if (projectManagerOption) {
+    businessGroup.insertBefore(option, projectManagerOption);
+  } else {
+    businessGroup.appendChild(option);
+  }
+}
 
 function onPresetSelect(sel) {
   const key = sel.value;
@@ -2386,6 +2408,7 @@ document.querySelectorAll('input[type="checkbox"],input[type="radio"],select')
   .forEach(el => el.addEventListener('change', updatePreview));
 
 // Init preview
+ensureMarketingAnalystPresetOption();
 updatePreview();
 renderHiringPeopleCard();
 
