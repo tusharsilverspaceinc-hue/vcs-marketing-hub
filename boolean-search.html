@@ -2097,6 +2097,25 @@ function buildLinkedInString() {
   if (excludeTerms.length) query += (query ? ' ' : '') + ` NOT ${excludeTerms[0]}`;
   return query.trim();
 }
+
+function buildGlassdoorString() {
+  const titleTerms = uniqueTerms([getPrimaryTitle(), ...tags.title]).filter(Boolean).slice(0, 4).map(quoteIfNeeded);
+  const mustTerms = uniqueTerms(tags.must || []).slice(0, 2).map(quoteIfNeeded);
+  const anyTerms = uniqueTerms(tags.any || []).slice(0, 2).map(quoteIfNeeded);
+  const locationTerms = buildLinkedInLooseLocation().slice(0, 2);
+  const companyTerms = uniqueTerms(tags.company || []).slice(0, 1).map(quoteIfNeeded);
+
+  const titleGroup = buildLinkedInOrGroup(titleTerms);
+  const skillTerms = mustTerms.length ? mustTerms : anyTerms;
+  const parts = [];
+
+  if (titleGroup) parts.push(titleGroup);
+  if (skillTerms.length) parts.push(skillTerms.join(' '));
+  if (locationTerms.length) parts.push(locationTerms.join(' '));
+  if (companyTerms.length) parts.push(companyTerms[0]);
+
+  return parts.filter(Boolean).join(' ').trim();
+}
 // Helper: get must-have skills as simple space-joined string
 function getMustSkillsSimple() {
   const vals = [...document.querySelectorAll('#mustTagWrap .tag')].map(el=>el.firstChild?.textContent?.trim()||'').filter(Boolean);
@@ -2109,20 +2128,7 @@ const generators = {
   'linkedin': () => buildLinkedInString(),
 
   // ── 2. Glassdoor: Quotes + OR supported; avoid deep nesting
-  'glassdoor': () => {
-    const title  = buildTitleBlock();
-    const skills = buildSkillsBlock();
-    const loc    = buildLocationBlock('glassdoor');
-    const visa   = buildVisaBlock();
-    let parts = [];
-    if (title)          parts.push(title);
-    if (skills.include) parts.push(skills.include);
-    if (loc)            parts.push(loc);
-    if (visa)           parts.push(visa);
-    let str = parts.join(' AND ');
-    if (skills.exclude) str += ' ' + skills.exclude;
-    return str.trim();
-  },
+  'glassdoor': () => buildGlassdoorString(),
 
   // ── 3. Wellfound (startup-focused): keyword + title only, no NOT, simple OR
   'wellfound': () => {
@@ -2223,8 +2229,8 @@ const platformMeta = {
     const location = document.getElementById('stateSelect').value || 'United States';
     return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(q)}&location=${encodeURIComponent(location)}${tprParam}`;
   }, tip:'Built for LinkedIn boolean rules: title, seniority, skills, location, and light company filters only. Advanced Options are excluded from the copied query; date posted still applies through Search Now URL params.' },
-  'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}&locT=N&locId=1`,
-                    tip:'Quotes + AND/OR supported. Avoid deep nesting. Best with title + skills + location.' },
+  'glassdoor':    { name:'Glassdoor',     url: q => `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(q)}`,
+                    tip:'Glassdoor works better with lighter keyword searches than dense recruiter boolean. This version uses title, top skills, and optional location/company only.' },
   'wellfound':    { name:'Wellfound',     url: q => `https://wellfound.com/jobs?q=${encodeURIComponent(q)}`,
                     tip:'Startup & tech jobs. Simplified keywords + OR work best. No complex NOT chains.' },
   'hiringcafe':   { name:'HiringCafe',    url: q => `https://hiring.cafe/?q=${encodeURIComponent(q)}`,
