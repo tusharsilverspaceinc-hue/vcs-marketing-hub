@@ -1,0 +1,2625 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weekly Candidate Report Generator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #0078d4;
+    --primary-dark: #005a9e;
+    --accent: #667eea;
+    --accent2: #764ba2;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+  }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: var(--gray-900);
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+
+  /* HEADER */
+  .top {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .top h1 { font-size: 22px; color: var(--gray-900); display: flex; align-items: center; gap: 10px; }
+  .top p { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
+  .badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toolbar .tbtn {
+    background: var(--gray-100);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-700);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .toolbar .tbtn:hover { background: var(--gray-200); }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1.2fr;
+    gap: 20px;
+  }
+  @media (max-width: 1020px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    padding: 24px;
+  }
+
+  h2 {
+    font-size: 15px;
+    color: var(--gray-700);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+  }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grp { margin-bottom: 12px; }
+  .grp.full { grid-column: 1 / -1; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-500);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  input[type="text"], input[type="email"], input[type="number"], select, input[type="date"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+
+  /* CANDIDATE PICKER */
+  .picker {
+    background: linear-gradient(135deg, #f0f4ff, #faf5ff);
+    border: 1.5px dashed #c7d2fe;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .picker-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    align-items: end;
+  }
+  .picker-row select { font-weight: 600; }
+  .icon-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: #5a67d8; transform: translateY(-1px); }
+  .icon-btn.danger { background: var(--danger); }
+  .icon-btn.danger:hover { background: #dc2626; }
+  .icon-btn.warn { background: var(--warning); }
+  .icon-btn.warn:hover { background: #d97706; }
+
+  .quick-info {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--gray-700);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .quick-info .email { color: var(--primary); font-weight: 600; word-break: break-all; }
+
+  /* STATS GRID */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 540px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    background: var(--gray-50);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--gray-200);
+    transition: all 0.15s;
+  }
+  .stat:focus-within { border-color: var(--accent); background: #fff; }
+  .stat label {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+  .stat input {
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .stat input:focus { box-shadow: none; }
+
+  /* BUTTONS */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .btn {
+    padding: 13px 18px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    grid-column: 1 / -1;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,120,212,0.35); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #059669; }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); }
+  .btn-secondary:hover { background: var(--gray-200); }
+
+  .hint {
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 8px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* PREVIEW */
+  .preview {
+    background: var(--gray-50);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1.5px solid var(--gray-200);
+    max-height: 720px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .meta {
+    background: #fff;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    border-left: 3px solid var(--accent);
+    font-size: 13px;
+  }
+  .meta div { margin: 3px 0; }
+  .meta strong { color: var(--gray-500); display: inline-block; min-width: 70px; }
+  .body {
+    font-family: Calibri, Candara, 'Segoe UI', Arial, sans-serif;
+    color: #1f2937;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .modal-head h3 { font-size: 18px; color: var(--gray-900); }
+  .close-x {
+    background: var(--gray-100);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--gray-700);
+  }
+  .close-x:hover { background: var(--gray-200); }
+
+  .cand-list {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+  .cand-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    align-items: center;
+    font-size: 13px;
+  }
+  .cand-item:last-child { border-bottom: none; }
+  .cand-item .nm { font-weight: 600; color: var(--gray-900); }
+  .cand-item .em { color: var(--gray-500); word-break: break-all; }
+  .cand-item .acts { display: flex; gap: 4px; }
+  .mini-btn {
+    background: var(--gray-100);
+    border: none;
+    padding: 5px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .mini-btn:hover { background: var(--gray-200); }
+  .mini-btn.danger:hover { background: #fee2e2; color: var(--danger); }
+
+  .empty {
+    text-align: center;
+    padding: 30px;
+    color: var(--gray-500);
+    font-size: 14px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--success);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    transform: translateY(140%);
+    transition: transform 0.3s;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 2000;
+    max-width: 360px;
+  }
+  .toast.show { transform: translateY(0); }
+
+  /* BANNER */
+  .banner {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-left: 4px solid var(--warning);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #78350f;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .week-info {
+    background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #3730a3;
+    margin-bottom: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* STRUCTURED UX REFRESH */
+  body {
+    background: #eef2f7;
+    padding: 24px;
+  }
+  .wrap { max-width: 1320px; }
+  .top {
+    border-radius: 12px;
+    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.10);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    align-items: flex-start;
+  }
+  .title-block {
+    max-width: 620px;
+  }
+  .eyebrow {
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .top h1 {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+  .top p {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .header-tools {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .toolbar .tbtn {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    min-height: 38px;
+  }
+  .toolbar .tbtn:hover {
+    border-color: var(--gray-300);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  }
+  .badge {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .workflow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .step {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    min-height: 72px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e0f2fe;
+    color: #0369a1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex: 0 0 28px;
+  }
+  .step strong {
+    display: block;
+    color: var(--gray-900);
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  .step span:not(.step-num) {
+    color: var(--gray-500);
+    display: block;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .grid {
+    grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .grid > *,
+  .picker-row > div {
+    min-width: 0;
+  }
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.10);
+    border: 1px solid rgba(148, 163, 184, 0.26);
+  }
+  .form-card {
+    padding: 0;
+    overflow: hidden;
+  }
+  .section {
+    padding: 22px 24px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .section:last-child { border-bottom: none; }
+  .section h2 {
+    border-bottom: 0;
+    margin-bottom: 6px;
+    padding-bottom: 0;
+    color: var(--gray-900);
+    font-size: 15px;
+  }
+  .section-copy {
+    color: var(--gray-500);
+    font-size: 12px;
+    line-height: 1.45;
+    margin-bottom: 14px;
+  }
+  .week-info {
+    margin-bottom: 0;
+    border-radius: 0;
+    border-bottom: 1px solid #c7d2fe;
+  }
+  .picker {
+    background: #f8fafc;
+    border-color: var(--gray-200);
+    margin-bottom: 0;
+  }
+  .quick-info {
+    border: 1px solid var(--gray-200);
+  }
+  .manual-candidate {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .saved-shortcut {
+    background: #f8fafc;
+    border: 1px dashed var(--gray-300);
+    border-radius: 10px;
+    margin-top: 14px;
+    padding: 14px;
+  }
+  .saved-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: end;
+  }
+  .saved-row .btn {
+    min-height: 42px;
+    white-space: nowrap;
+  }
+  .row,
+  .row3 {
+    margin-bottom: 0;
+  }
+  .grp { margin-bottom: 14px; }
+  .grp:last-child { margin-bottom: 0; }
+  label {
+    letter-spacing: 0.05em;
+  }
+  input[type="text"], input[type="email"], input[type="number"], select, input[type="date"], textarea {
+    min-height: 42px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stat {
+    border-radius: 8px;
+    background: #fff;
+  }
+  .stat input {
+    color: var(--primary);
+  }
+  .actions {
+    margin-top: 0;
+  }
+  .modal .actions {
+    margin-top: 18px;
+  }
+  .primary-actions {
+    padding: 22px 24px;
+    background: #f8fafc;
+  }
+  .hint {
+    grid-column: 1 / -1;
+    text-align: left;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 0;
+  }
+  .preview-card {
+    position: sticky;
+    top: 18px;
+  }
+  .preview-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .preview-head h2 {
+    border-bottom: 0;
+    margin-bottom: 4px;
+    padding-bottom: 0;
+    color: var(--gray-900);
+  }
+  .preview-head p {
+    color: var(--gray-500);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .preview-status {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    color: #1d4ed8;
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 10px;
+  }
+  .banner {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid var(--warning);
+  }
+  .preview {
+    background: #fff;
+    max-height: calc(100vh - 220px);
+    min-height: 460px;
+  }
+  .meta {
+    border-left-color: var(--primary);
+    background: #f8fafc;
+  }
+  .email-body {
+    font-family: Calibri, Candara, 'Segoe UI', Arial, sans-serif;
+    color: #1f2937;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .email-body p {
+    margin: 0 0 12px;
+  }
+  .email-body .email-section-title {
+    font-weight: 700;
+    margin: 18px 0 8px;
+  }
+  .email-body ul {
+    margin: 0 0 14px 22px;
+    padding: 0;
+  }
+  .email-body li {
+    margin: 0 0 6px;
+    padding-left: 2px;
+  }
+  .email-body .signature {
+    margin-top: 18px;
+  }
+  .email-pre {
+    font-family: Calibri, Candara, 'Segoe UI', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    margin: 0;
+  }
+  .modal {
+    border-radius: 12px;
+  }
+  @media (max-width: 1020px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    .preview-card {
+      position: static;
+    }
+    .preview {
+      max-height: none;
+      min-height: 360px;
+    }
+  }
+  @media (max-width: 760px) {
+    body { padding: 14px; }
+    .top {
+      padding: 18px;
+    }
+    .top h1 {
+      font-size: 22px;
+    }
+    .header-tools,
+    .toolbar {
+      width: 100%;
+      justify-content: stretch;
+    }
+    .toolbar .tbtn,
+    .badge {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+    .workflow {
+      grid-template-columns: 1fr;
+    }
+    .row,
+    .row3,
+    .picker-row,
+    .actions {
+      grid-template-columns: 1fr;
+    }
+    .picker-row {
+      align-items: stretch;
+    }
+    .saved-row {
+      grid-template-columns: 1fr;
+    }
+    .icon-btn {
+      width: 100%;
+    }
+    .stats {
+      grid-template-columns: 1fr;
+    }
+    .section,
+    .primary-actions,
+    .card {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    .form-card {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .preview-head {
+      display: block;
+    }
+    .preview-status {
+      display: inline-block;
+      margin-top: 10px;
+    }
+  }
+
+  /* REFERENCE AESTHETIC: DARK CREDENTIAL FORM */
+  :root {
+    --primary: #14a2e2;
+    --primary-dark: #0875b8;
+    --accent: #14a2e2;
+    --accent2: #66d9ff;
+    --success: #14a2e2;
+    --danger: #ff4d75;
+    --warning: #eebd55;
+    --ink: #f5fbff;
+    --muted: #a8c0d2;
+    --panel: rgba(7, 16, 25, 0.94);
+    --panel-soft: rgba(8, 23, 34, 0.94);
+    --field: rgba(7, 116, 183, 0.14);
+    --line: rgba(20, 162, 226, 0.34);
+  }
+  body {
+    background:
+      radial-gradient(circle at 76% 10%, rgba(20, 162, 226, 0.12), transparent 25%),
+      linear-gradient(180deg, #0d1b25 0%, #07121b 100%);
+    color: var(--ink);
+    font-family: Arial, 'Segoe UI', sans-serif;
+    padding: 48px;
+  }
+  .wrap {
+    max-width: 1200px;
+  }
+  .top,
+  .card,
+  .workflow .step {
+    background: linear-gradient(180deg, rgba(8, 18, 28, 0.98), rgba(6, 14, 22, 0.98));
+    border: 1px solid rgba(20, 162, 226, 0.42);
+    border-radius: 0;
+    box-shadow: 0 0 0 1px rgba(20, 162, 226, 0.06), 0 0 18px rgba(20, 162, 226, 0.10);
+  }
+  .top {
+    padding: 32px 40px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .top::after {
+    content: "";
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #14a2e2, transparent);
+    box-shadow: 0 0 10px rgba(20, 162, 226, 0.7);
+  }
+  .eyebrow,
+  label,
+  .step strong,
+  .preview-status,
+  .badge {
+    color: #bfe8ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .top h1 {
+    color: #fff;
+    font-size: 24px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .top p,
+  .section-copy,
+  .preview-head p,
+  .step span:not(.step-num),
+  .hint {
+    color: var(--muted);
+  }
+  .toolbar .tbtn,
+  .btn,
+  .icon-btn,
+  .mini-btn {
+    border-radius: 0;
+    box-shadow: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .toolbar .tbtn {
+    background: rgba(20, 162, 226, 0.08);
+    border: 1px solid rgba(20, 162, 226, 0.34);
+    color: #cfefff;
+  }
+  .toolbar .tbtn:hover,
+  .btn-secondary:hover {
+    background: rgba(20, 162, 226, 0.16);
+    border-color: rgba(20, 162, 226, 0.75);
+    color: #fff;
+  }
+  .badge {
+    background: rgba(20, 162, 226, 0.10);
+    border: 1px solid rgba(20, 162, 226, 0.52);
+    color: #35c3ff;
+    border-radius: 0;
+  }
+  .workflow {
+    gap: 12px;
+  }
+  .step {
+    min-height: 76px;
+    padding: 14px;
+  }
+  .step-num {
+    background: rgba(20, 162, 226, 0.10);
+    border: 1px solid rgba(20, 162, 226, 0.42);
+    border-radius: 0;
+    color: #28c2ff;
+  }
+  .form-card {
+    overflow: hidden;
+  }
+  .week-info {
+    background: rgba(20, 162, 226, 0.10);
+    border-bottom: 1px solid rgba(20, 162, 226, 0.38);
+    color: #cfefff;
+    border-radius: 0;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .section {
+    border-bottom: 1px solid rgba(20, 162, 226, 0.16);
+  }
+  .section h2,
+  .preview-head h2,
+  .modal-head h3 {
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+  .section h2::before,
+  .preview-head h2::before {
+    content: "â€”";
+    color: #14a2e2;
+    margin-right: 10px;
+  }
+  .manual-candidate,
+  .saved-shortcut,
+  .picker,
+  .stat,
+  .hint,
+  .preview,
+  .meta,
+  .banner,
+  .cand-list,
+  .modal {
+    background: rgba(7, 116, 183, 0.08);
+    border: 1px solid rgba(20, 162, 226, 0.22);
+    border-radius: 0;
+    color: var(--ink);
+  }
+  .saved-shortcut {
+    border-style: dashed;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    background: var(--field);
+    border: 1px solid rgba(20, 162, 226, 0.24);
+    border-radius: 0;
+    color: #fff;
+    font-weight: 500;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(194, 222, 240, 0.62);
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: rgba(20, 162, 226, 0.85);
+    box-shadow: 0 0 0 2px rgba(20, 162, 226, 0.20);
+  }
+  select option {
+    background: #081722;
+    color: #fff;
+  }
+  .stat input {
+    color: #35c3ff;
+  }
+  .stat:focus-within {
+    border-color: rgba(20, 162, 226, 0.85);
+    background: rgba(20, 162, 226, 0.12);
+  }
+  .btn-primary,
+  .btn-success {
+    background: #14a2e2;
+    color: #06111b;
+    border: 1px solid #14a2e2;
+  }
+  .btn-primary:hover,
+  .btn-success:hover {
+    background: #35c3ff;
+    box-shadow: 0 0 16px rgba(20, 162, 226, 0.36);
+    transform: none;
+  }
+  .btn-secondary {
+    background: rgba(20, 162, 226, 0.06);
+    border: 1px dashed rgba(20, 162, 226, 0.38);
+    color: #cfefff;
+  }
+  .primary-actions {
+    background: rgba(20, 162, 226, 0.04);
+  }
+  .preview-status {
+    background: rgba(20, 162, 226, 0.10);
+    border: 1px solid rgba(20, 162, 226, 0.42);
+    border-radius: 0;
+    color: #35c3ff;
+  }
+  .banner {
+    border-left: 3px solid #14a2e2;
+    color: #cfefff;
+  }
+  .meta {
+    border-left: 3px solid #14a2e2;
+  }
+  .meta strong {
+    color: #bfe8ff;
+  }
+  .email-pre,
+  .body {
+    color: #f5fbff;
+  }
+  .preview .email-pre {
+    color: #f5fbff !important;
+  }
+  .modal-bg {
+    background: rgba(3, 9, 14, 0.78);
+  }
+  .modal {
+    box-shadow: 0 0 24px rgba(20, 162, 226, 0.18);
+  }
+  .close-x {
+    background: rgba(20, 162, 226, 0.10);
+    border: 1px solid rgba(20, 162, 226, 0.32);
+    border-radius: 0;
+    color: #cfefff;
+  }
+  .cand-item {
+    border-bottom-color: rgba(20, 162, 226, 0.14);
+  }
+  .cand-item .nm {
+    color: #fff;
+  }
+  .cand-item .em,
+  .empty {
+    color: var(--muted);
+  }
+  .toast {
+    border-radius: 0;
+    background: #14a2e2;
+    color: #06111b;
+  }
+
+  /* TYPOGRAPHY NORMALIZATION */
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: Arial, 'Segoe UI', sans-serif;
+  }
+  body {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #d7ecfb;
+  }
+  .top p,
+  .section-copy,
+  .preview-head p,
+  .step span:not(.step-num),
+  .hint,
+  .banner,
+  .empty,
+  .cand-item .em {
+    color: #9fb9cc;
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 400;
+  }
+  .top h1 {
+    font-size: 24px;
+    line-height: 1.2;
+    color: #ffffff;
+    font-weight: 700;
+  }
+  .section h2,
+  .preview-head h2,
+  .modal-head h3 {
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  .eyebrow,
+  label,
+  .step strong,
+  .preview-status,
+  .badge,
+  .toolbar .tbtn,
+  .btn,
+  .mini-btn {
+    color: #cfefff;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 500;
+  }
+  .stat input {
+    color: #35c3ff;
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 700;
+  }
+  .meta,
+  .meta strong {
+    color: #d7ecfb;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .email-pre,
+  .body,
+  .preview .email-pre {
+    color: #d7ecfb !important;
+    font-family: Arial, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+    font-weight: 400 !important;
+  }
+  .week-info {
+    color: #cfefff;
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  .btn-primary,
+  .btn-success {
+    color: #06111b;
+  }
+  @media (max-width: 760px) {
+    body { padding: 18px; }
+    .top { padding: 24px; }
+    .top::after { left: 24px; right: 24px; }
+    .top h1 { font-size: 20px; }
+  }
+
+  /* VCS MARKETING HUB THEME */
+  :root {
+    --vcs-bg: #0d1f2a;
+    --vcs-shell: rgba(8, 18, 28, 0.98);
+    --vcs-panel: rgba(5, 14, 22, 0.98);
+    --vcs-field: rgba(7, 116, 183, 0.18);
+    --vcs-blue: #14a2e2;
+    --vcs-blue-dark: #003a61;
+    --vcs-blue-soft: #b5d6f2;
+    --vcs-text: #ffffff;
+    --vcs-muted: #b5d6f2;
+    --vcs-faint: #6b90b0;
+  }
+  body {
+    background:
+      radial-gradient(circle at 18% 6%, rgba(20, 162, 226, 0.10), transparent 26%),
+      radial-gradient(circle at 88% 92%, rgba(20, 162, 226, 0.10), transparent 28%),
+      linear-gradient(180deg, #102f3c 0%, #0d1b25 44%, #081722 100%);
+    color: var(--vcs-muted);
+    font-family: 'Open Sans', Arial, 'Segoe UI', sans-serif;
+    font-weight: 500;
+  }
+  .wrap {
+    max-width: 1120px;
+  }
+  .top {
+    background: linear-gradient(135deg, rgba(8, 18, 28, 0.99), rgba(15, 26, 38, 0.99));
+    border-color: rgba(20, 162, 226, 0.48);
+    box-shadow: 0 0 6px rgba(20, 162, 226, 0.55);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 28px;
+    padding: 38px 44px;
+  }
+  .title-block {
+    position: relative;
+    padding-left: 78px;
+  }
+  .brand-logo {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 54px;
+    height: 54px;
+    transform: translateY(-50%);
+    background: #ffffff;
+    object-fit: contain;
+    padding: 6px;
+    box-shadow: 0 0 24px rgba(20, 162, 226, 0.42);
+  }
+  .eyebrow {
+    color: var(--vcs-muted);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+  }
+  .top h1 {
+    color: var(--vcs-text);
+    font-family: 'Trebuchet MS', 'Open Sans', Arial, sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    line-height: 1.05;
+  }
+  .top p {
+    color: var(--vcs-muted);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .header-tools {
+    align-items: center;
+  }
+  .toolbar .tbtn,
+  .badge {
+    background: rgba(20, 162, 226, 0.10);
+    border-color: rgba(20, 162, 226, 0.40);
+    color: var(--vcs-blue);
+    min-height: 36px;
+  }
+  .toolbar .tbtn:hover {
+    background: rgba(20, 162, 226, 0.18);
+    color: #ffffff;
+  }
+  .workflow {
+    background: var(--vcs-blue-dark);
+    border: 1px solid rgba(20, 162, 226, 0.45);
+    border-bottom: 3px solid var(--vcs-blue);
+    gap: 0;
+    margin-bottom: 18px;
+  }
+  .workflow .step {
+    background: transparent;
+    border: 0;
+    border-right: 1px solid rgba(20, 162, 226, 0.24);
+    box-shadow: none;
+    min-height: 64px;
+  }
+  .workflow .step:last-child {
+    border-right: 0;
+  }
+  .step-num {
+    background: rgba(20, 162, 226, 0.16);
+    color: #ffffff;
+  }
+  .step strong {
+    color: #b5d6f2;
+  }
+  .grid {
+    gap: 18px;
+  }
+  .card {
+    background:
+      repeating-linear-gradient(0deg, rgba(20, 162, 226, 0.025), rgba(20, 162, 226, 0.025) 1px, transparent 1px, transparent 4px),
+      var(--vcs-panel);
+    border-color: rgba(20, 162, 226, 0.45);
+    box-shadow: 0 0 6px rgba(20, 162, 226, 0.34);
+  }
+  .week-info {
+    background: rgba(20, 162, 226, 0.16);
+    border-bottom: 2px solid rgba(20, 162, 226, 0.42);
+    color: #ffffff;
+  }
+  .section {
+    padding: 28px 30px;
+  }
+  .section h2,
+  .preview-head h2 {
+    color: #ffffff;
+    font-family: 'Trebuchet MS', 'Open Sans', Arial, sans-serif;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+  }
+  .section h2::first-letter,
+  .preview-head h2::first-letter {
+    color: var(--vcs-blue);
+  }
+  .section-copy,
+  .preview-head p {
+    color: var(--vcs-muted);
+    font-size: 12px;
+  }
+  label {
+    color: var(--vcs-muted);
+    font-size: 13px;
+    letter-spacing: 0.18em;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    background: var(--vcs-field);
+    border-color: rgba(20, 162, 226, 0.32);
+    color: #ffffff;
+    font-family: 'Space Grotesk', 'Open Sans', Arial, sans-serif;
+    font-weight: 600;
+  }
+  .manual-candidate,
+  .saved-shortcut,
+  .stat,
+  .preview,
+  .meta,
+  .banner {
+    background: rgba(7, 116, 183, 0.10);
+    border-color: rgba(20, 162, 226, 0.30);
+  }
+  .stat {
+    min-height: 88px;
+  }
+  .stat input {
+    color: #14a2e2;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .btn-primary,
+  .btn-success {
+    background: var(--vcs-blue);
+    border-color: var(--vcs-blue);
+    color: #06111b;
+  }
+  .btn-secondary {
+    border-color: rgba(20, 162, 226, 0.42);
+    color: #ffffff;
+  }
+  .preview-card {
+    background:
+      repeating-linear-gradient(0deg, rgba(20, 162, 226, 0.020), rgba(20, 162, 226, 0.020) 1px, transparent 1px, transparent 4px),
+      var(--vcs-panel);
+  }
+  .preview-status {
+    background: rgba(20, 162, 226, 0.12);
+    border-color: rgba(20, 162, 226, 0.44);
+    color: var(--vcs-muted);
+  }
+  .email-rich {
+    color: #d7ecfb;
+    font-family: Arial, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.58;
+  }
+  .email-rich p {
+    margin: 0 0 14px;
+  }
+  .email-rich .email-heading {
+    color: #ffffff;
+    font-weight: 800;
+    margin-top: 18px;
+  }
+  .email-rich .email-highlight {
+    color: #ffffff;
+    background: rgba(20, 162, 226, 0.20);
+    border: 1px solid rgba(20, 162, 226, 0.38);
+    padding: 1px 5px;
+    font-weight: 800;
+  }
+  .email-rich .snapshot-list {
+    margin: 0 0 18px 0;
+    padding: 0;
+    list-style: none;
+    border-left: 3px solid var(--vcs-blue);
+  }
+  .email-rich .snapshot-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(20, 162, 226, 0.16);
+  }
+  .email-rich .metric {
+    color: #ffffff;
+    font-weight: 700;
+  }
+  .email-rich .count {
+    color: #14a2e2;
+    font-weight: 800;
+  }
+  .preview .email-letter {
+    background: rgba(7, 116, 183, 0.10) !important;
+    border: 1px solid rgba(20, 162, 226, 0.30);
+    color: #d7ecfb !important;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 12pt !important;
+    line-height: 1.22 !important;
+    padding: 18px !important;
+  }
+  .preview .email-letter *,
+  .preview .email-letter strong,
+  .preview .email-letter li,
+  .preview .email-letter p {
+    color: #d7ecfb !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+  .preview .email-letter strong {
+    color: #ffffff !important;
+  }
+  @media (max-width: 760px) {
+    .top {
+      display: block;
+      padding: 28px 24px;
+    }
+    .title-block {
+      padding-left: 0;
+    }
+    .brand-logo {
+      position: static;
+      transform: none;
+      margin-bottom: 16px;
+    }
+    .top h1 {
+      font-size: 22px;
+    }
+    .workflow {
+      background: transparent;
+      border: 0;
+      gap: 12px;
+    }
+    .workflow .step {
+      border: 1px solid rgba(20, 162, 226, 0.45);
+    }
+  }
+
+  /* FINAL ARIAL + ALIGNMENT PASS */
+  *,
+  *::before,
+  *::after {
+    font-family: Arial, sans-serif !important;
+  }
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+  }
+  .top {
+    display: block;
+    align-items: center;
+  }
+  .title-block {
+    min-width: 0;
+  }
+  .top h1 {
+    font-size: 25px;
+    line-height: 1.18;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .top p {
+    font-size: 12px;
+    line-height: 1.45;
+    letter-spacing: 0.08em;
+    text-align: left;
+    max-width: 760px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+  .header-tools {
+    justify-content: flex-start;
+    margin-top: 20px;
+  }
+  .toolbar {
+    align-items: center;
+  }
+  .toolbar .tbtn,
+  .badge,
+  .btn,
+  .mini-btn {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    min-height: 40px;
+    text-align: center;
+  }
+  .workflow .step {
+    align-items: center;
+  }
+  .step strong {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .step span:not(.step-num) {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .section,
+  .primary-actions {
+    padding: 26px 30px;
+  }
+  .section h2,
+  .preview-head h2,
+  .modal-head h3 {
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .section-copy,
+  .preview-head p,
+  .hint,
+  .banner {
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: left;
+  }
+  .row {
+    align-items: start;
+  }
+  .grp {
+    margin-bottom: 14px;
+  }
+  label {
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: 0.10em;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 14px;
+    line-height: 1.35;
+    min-height: 44px;
+    text-align: left;
+  }
+  .stat {
+    min-height: 82px;
+  }
+  .stat label {
+    font-size: 11px;
+  }
+  .stat input {
+    font-size: 26px;
+    line-height: 1.1;
+  }
+  .saved-row {
+    align-items: end;
+  }
+  .saved-row .btn {
+    height: 44px;
+  }
+  .preview-head {
+    align-items: center;
+  }
+  .meta {
+    padding: 16px;
+  }
+  .meta div {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 10px;
+    align-items: baseline;
+    margin: 6px 0;
+  }
+  .meta strong {
+    min-width: 0;
+    font-size: 13px;
+  }
+  .email-rich {
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: left;
+  }
+  .email-rich p {
+    margin: 0 0 13px;
+  }
+  .email-rich .snapshot-list li {
+    align-items: center;
+  }
+  .email-rich .metric,
+  .email-rich .count {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  @media (max-width: 760px) {
+    .top h1 {
+      font-size: 22px;
+      letter-spacing: 0.06em;
+    }
+    .top p {
+      letter-spacing: 0.04em;
+    }
+    .header-tools,
+    .toolbar {
+      justify-content: stretch;
+    }
+    .section,
+    .primary-actions,
+    .card {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+    .form-card {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .section h2,
+    .preview-head h2 {
+      font-size: 20px;
+    }
+    .meta div {
+      grid-template-columns: 64px minmax(0, 1fr);
+    }
+  }
+
+  /* VCS SECTION HEADING SYSTEM */
+  .section-kicker {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #14a2e2;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+  .section-kicker::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: #14a2e2;
+    flex: 0 0 28px;
+  }
+  .split-heading {
+    color: #ffffff;
+    font-size: 30px !important;
+    line-height: 1.15 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 0 8px !important;
+  }
+  .split-heading .heading-accent {
+    color: #14a2e2;
+  }
+  .split-heading .heading-main {
+    color: #ffffff;
+  }
+  .section h2::before,
+  .preview-head h2::before {
+    content: none !important;
+  }
+  .section h2::first-letter,
+  .preview-head h2::first-letter {
+    color: inherit;
+  }
+  .section-copy {
+    margin-top: 0;
+    margin-bottom: 18px;
+  }
+  .preview-head {
+    align-items: flex-start;
+  }
+  .preview-title-block {
+    min-width: 0;
+  }
+  @media (max-width: 760px) {
+    .section-kicker {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      gap: 10px;
+    }
+    .section-kicker::before {
+      width: 20px;
+      flex-basis: 20px;
+    }
+    .split-heading {
+      font-size: 24px !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="top">
+    <div class="title-block">
+      <img class="brand-logo" src="Logo.png" alt="Vizva Consultancy Services logo" />
+      <div class="eyebrow">Vizva Consultancy Services</div>
+      <h1>Weekly Candidate Report Generator</h1>
+      <p>Connecting Talent with Opportunity - Weekly Candidate Activity Reporting</p>
+    </div>
+    <div class="header-tools">
+      <div class="toolbar">
+        <button class="tbtn" onclick="openManage()">Manage Candidates</button>
+        <button class="tbtn" onclick="openImport()">Import CSV</button>
+        <button class="tbtn" onclick="exportCSV()">Export CSV</button>
+      </div>
+      <div class="badge" id="candCount">0 candidates saved</div>
+    </div>
+  </div>
+
+  <div class="workflow" aria-label="Report workflow">
+    <div class="step"><span class="step-num">1</span><div><strong>Candidate</strong><span>Enter name and email.</span></div></div>
+    <div class="step"><span class="step-num">2</span><div><strong>Update</strong><span>Enter the week and activity numbers.</span></div></div>
+    <div class="step"><span class="step-num">3</span><div><strong>Review</strong><span>Check the live email preview.</span></div></div>
+    <div class="step"><span class="step-num">4</span><div><strong>Send</strong><span>Open the draft in Outlook.</span></div></div>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT: FORM -->
+    <div class="card form-card">
+
+      <div class="week-info">
+        Reporting Week: <span id="weekLabel" style="margin-left:6px;"></span>
+      </div>
+
+      <div class="section">
+      <div class="section-kicker">Section 01 / Candidate Profile</div>
+      <h2 class="split-heading"><span class="heading-accent">Candidate</span> <span class="heading-main">Details</span></h2>
+      <p class="section-copy">Type the candidate details here. The email draft will use these fields directly.</p>
+      <div class="manual-candidate">
+        <div class="row">
+          <div class="grp">
+            <label>Candidate Name</label>
+            <input type="text" id="candidateName" placeholder="e.g., John Smith" />
+          </div>
+          <div class="grp">
+            <label>Candidate Email</label>
+            <input type="email" id="candidateEmail" placeholder="john.smith@email.com" />
+          </div>
+        </div>
+        <div class="grp">
+          <label>Target Role (optional)</label>
+          <input type="text" id="candidateRole" placeholder="e.g., Senior Java Developer" />
+        </div>
+        <button class="btn btn-primary" type="button" onclick="saveCurrentCandidate()">Save Candidate</button>
+        <div class="saved-shortcut">
+          <div class="saved-row">
+            <div>
+              <label>Load saved candidate (optional)</label>
+              <select id="candidatePicker" onchange="onPickCandidate()">
+                <option value="">â€” Choose saved candidate â€”</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary" onclick="openManage()">Manage List</button>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="section">
+      <div class="section-kicker">Section 02 / Reporting Timeline</div>
+      <h2 class="split-heading"><span class="heading-accent">Report</span> <span class="heading-main">Period</span></h2>
+      <p class="section-copy">Select the month and week. The start and end dates will update automatically.</p>
+      <div class="row">
+        <div class="grp">
+          <label>Report Month</label>
+          <select id="reportMonth" onchange="onReportMonthChange()"></select>
+        </div>
+        <div class="grp">
+          <label>Report Week</label>
+          <select id="reportWeek" onchange="onReportWeekChange()"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="grp">
+          <label>Week Start Date</label>
+          <input type="date" id="weekStart" />
+        </div>
+        <div class="grp">
+          <label>Week End Date</label>
+          <input type="date" id="weekEnd" />
+        </div>
+      </div>
+      </div>
+
+      <div class="section">
+      <div class="section-kicker">Section 03 / Activity Snapshot</div>
+      <h2 class="split-heading"><span class="heading-accent">Weekly</span> <span class="heading-main">Activity</span></h2>
+      <p class="section-copy">Use zero when an activity did not happen this week. The email text updates automatically.</p>
+      <div class="stats">
+        <div class="stat"><label>Applications Submitted</label><input type="number" id="applications" value="0" min="0" /></div>
+        <div class="stat"><label>Screening Calls</label><input type="number" id="screenings" value="0" min="0" /></div>
+        <div class="stat"><label>Interviews Scheduled</label><input type="number" id="interviews" value="0" min="0" /></div>
+        <div class="stat"><label>Assessments</label><input type="number" id="assessments" value="0" min="0" /></div>
+        <div class="stat"><label>Submissions (RTR)</label><input type="number" id="rtr" value="0" min="0" /></div>
+        <div class="stat"><label>LinkedIn Connections</label><input type="number" id="offers" value="0" min="0" /></div>
+      </div>
+      </div>
+
+      <div class="section">
+      <div class="section-kicker">Section 04 / Sender Identity</div>
+      <h2 class="split-heading"><span class="heading-accent">Sender</span> <span class="heading-main">Details</span></h2>
+      <p class="section-copy">These details appear in the closing signature.</p>
+      <div class="row">
+        <div class="grp">
+          <label>Your Name</label>
+          <input type="text" id="senderName" placeholder="Enter sender name" />
+        </div>
+        <div class="grp">
+          <label>Your Designation</label>
+          <input type="text" id="senderTitle" placeholder="Enter designation" />
+        </div>
+      </div>
+      <div class="grp">
+        <label>Your Email</label>
+        <input type="email" id="senderEmail" placeholder="Enter sender email" />
+      </div>
+      </div>
+
+      <div class="actions primary-actions">
+        <button class="btn btn-primary" onclick="openInWebOutlook()">Open in Web Outlook</button>
+        <button class="btn btn-success" onclick="copyEmailBody()">Copy Body</button>
+        <button class="btn btn-secondary" onclick="resetStats()">Reset Numbers</button>
+        <p class="hint">Tip: "Open in Web Outlook" launches outlook.office.com with a new email drafted. Review once, then send.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: PREVIEW -->
+    <div class="card preview-card">
+      <div class="preview-head">
+        <div class="preview-title-block">
+          <div class="section-kicker">Section 05 / Email Review</div>
+          <h2 class="split-heading"><span class="heading-accent">Live Email</span> <span class="heading-main">Preview</span></h2>
+          <p>Use this side to review the recipient, sender, subject, and final message before opening Outlook.</p>
+        </div>
+        <div class="preview-status">Auto-updating</div>
+      </div>
+      <div class="banner">
+        The draft uses the Candidate Email field. The subject updates automatically from the candidate name.
+      </div>
+      <div class="preview">
+        <div class="meta">
+          <div><strong>To:</strong> <span id="prevTo">â€”</span></div>
+          <div><strong>From:</strong> <span id="prevFrom">â€”</span></div>
+          <div><strong>Subject:</strong> <span id="prevSubject">â€”</span></div>
+        </div>
+        <div id="prevBody" class="body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CANDIDATE MODAL -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="addModalTitle">âž• Add New Candidate</h3>
+      <button class="close-x" onclick="closeAdd()">Ã—</button>
+    </div>
+    <div class="grp">
+      <label>Full Name *</label>
+      <input type="text" id="newName" placeholder="e.g., John Smith" />
+    </div>
+    <div class="grp">
+      <label>Email Address *</label>
+      <input type="email" id="newEmail" placeholder="john.smith@email.com" />
+    </div>
+    <div class="grp">
+      <label>Target Role (optional)</label>
+      <input type="text" id="newRole" placeholder="e.g., Senior Java Developer" />
+    </div>
+    <div class="grp">
+      <label>Phone (optional)</label>
+      <input type="text" id="newPhone" placeholder="+1 555 555 5555" />
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveCandidate()">ðŸ’¾ Save Candidate</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE CANDIDATES MODAL -->
+<div class="modal-bg" id="manageModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>ðŸ‘¥ Manage Candidates</h3>
+      <button class="close-x" onclick="closeManage()">Ã—</button>
+    </div>
+    <p style="font-size:13px; color: var(--gray-500); margin-bottom: 8px;">
+      Your candidate list is saved in this browser. Use Import/Export CSV to back up or share.
+    </p>
+    <div class="cand-list" id="candList"></div>
+    <div class="actions" style="grid-template-columns: 1fr 1fr;">
+      <button class="btn btn-secondary" onclick="closeManage(); openAdd();">âž• Add New</button>
+      <button class="btn btn-secondary" onclick="closeManage(); openImport();">ðŸ“¥ Import CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT CSV MODAL -->
+<div class="modal-bg" id="importModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>ðŸ“¥ Import Candidates from CSV</h3>
+      <button class="close-x" onclick="closeImport()">Ã—</button>
+    </div>
+    <p style="font-size:13px; color: var(--gray-500); margin-bottom: 8px; line-height: 1.5;">
+      Paste your candidate tracker rows below. The first row should be the <strong>header</strong> exactly as in your sheet. Tabs (from Excel/Google Sheets) and commas both work.
+    </p>
+    <div style="background: var(--gray-50); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 11px; color: var(--gray-700); font-family: monospace; line-height: 1.6; overflow-x: auto; white-space: nowrap;">
+      Candidate&nbsp;|&nbsp;Recruiter&nbsp;|&nbsp;Team Lead&nbsp;|&nbsp;Status&nbsp;|&nbsp;Experience&nbsp;|&nbsp;Technology&nbsp;|&nbsp;Visa&nbsp;|&nbsp;EAD Start Date&nbsp;|&nbsp;EAD End Date&nbsp;|&nbsp;Expiring in&nbsp;|&nbsp;VCS / SST&nbsp;|&nbsp;Ack Email&nbsp;|&nbsp;Location&nbsp;|&nbsp;Marketing start date&nbsp;|&nbsp;Days&nbsp;|&nbsp;Candidate's email address&nbsp;|&nbsp;Phone number
+    </div>
+    <p style="font-size:12px; color: var(--gray-500); margin-bottom: 10px;">
+      âœ… Tip: select the header row + data rows from your sheet and paste directly here.
+    </p>
+    <textarea id="csvInput" rows="10" style="width:100%; padding:12px; border:1.5px solid var(--gray-200); border-radius:8px; font-family:monospace; font-size:12px; resize:vertical;" placeholder="Candidate&#9;Recruiter&#9;Team Lead&#9;Status&#9;Experience&#9;Technology&#9;Visa&#9;EAD Start Date&#9;EAD End Date&#9;Expiring in&#9;VCS / SST&#9;Ack Email&#9;Location&#9;Marketing start date&#9;Days&#9;Candidate's email address&#9;Phone number&#10;John Smith&#9;Tushar&#9;Rahul&#9;Active&#9;8 yrs&#9;Java/Spring&#9;H1B&#9;2024-01-15&#9;2027-01-14&#9;245&#9;VCS&#9;Yes&#9;NJ, USA&#9;2026-05-12&#9;9&#9;john@email.com&#9;+1 555 1234"></textarea>
+    <div class="actions" style="grid-template-columns: 1fr;">
+      <button class="btn btn-primary" onclick="importCSV()">ðŸ“¥ Import Candidates</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Done</div>
+
+<script>
+// ========== STATE ==========
+const STORAGE_KEY = 'wcrg_candidates_v1';
+let candidates = [];
+let editingId = null;
+
+// ========== UTIL ==========
+function val(id) { return document.getElementById(id).value.trim(); }
+function num(id) { return parseInt(document.getElementById(id).value || '0', 10); }
+function el(id) { return document.getElementById(id); }
+function showToast(msg, color) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--success)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function uid() { return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ========== STORAGE ==========
+function loadCandidates() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    candidates = raw ? JSON.parse(raw) : [];
+  } catch (e) { candidates = []; }
+  renderPicker();
+  updateCount();
+}
+function saveAll(selectedId) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+  renderPicker(selectedId);
+  updateCount();
+}
+function updateCount() {
+  el('candCount').textContent = candidates.length + ' candidate' + (candidates.length === 1 ? '' : 's') + ' saved';
+}
+
+// ========== PICKER ==========
+function renderPicker(selectedId) {
+  const sel = el('candidatePicker');
+  const current = selectedId || sel.value;
+  sel.innerHTML = '<option value="">â€” Choose saved candidate â€”</option>';
+  candidates
+    .slice()
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + ' â€” ' + c.email;
+      sel.appendChild(opt);
+    });
+  if (current) sel.value = current;
+}
+
+function saveTypedCandidate(showMessage) {
+  const name = val('candidateName');
+  const email = val('candidateEmail');
+  const role = val('candidateRole');
+  if (!name || !email || !email.includes('@')) return null;
+
+  const existing = candidates.find(x => x.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    existing.name = name;
+    existing.email = email;
+    existing.role = role;
+    saveAll(existing.id);
+    el('candidatePicker').value = existing.id;
+    if (showMessage) showToast('Candidate saved locally');
+    return existing;
+  }
+
+  const record = { id: uid(), name, email, role, phone: '' };
+  candidates.push(record);
+  saveAll(record.id);
+  el('candidatePicker').value = record.id;
+  if (showMessage) showToast('Candidate saved locally');
+  return record;
+}
+
+function saveCurrentCandidate() {
+  const name = val('candidateName');
+  const email = val('candidateEmail');
+  if (!name) { showToast('Enter candidate name first', 'var(--danger)'); return; }
+  if (!email || !email.includes('@')) { showToast('Enter a valid candidate email first', 'var(--danger)'); return; }
+  saveTypedCandidate(true);
+  generatePreview();
+}
+
+let saveTypedTimer = null;
+function scheduleTypedCandidateSave() {
+  clearTimeout(saveTypedTimer);
+  saveTypedTimer = setTimeout(() => {
+    saveTypedCandidate(false);
+    generatePreview();
+  }, 450);
+}
+
+function chip(label, value, color) {
+  if (!value) return '';
+  return '<span style="background:' + (color || '#eef2ff') + '; color:#3730a3; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:600;">' + label + ': ' + escapeHtml(value) + '</span>';
+}
+
+function onPickCandidate() {
+  const id = el('candidatePicker').value;
+  const c = candidates.find(x => x.id === id);
+  if (c) {
+    el('candidateName').value = c.name || '';
+    el('candidateEmail').value = c.email || '';
+    el('candidateRole').value = c.role || '';
+  }
+  generatePreview();
+}
+
+// ========== ADD / EDIT ==========
+function openAdd() {
+  editingId = null;
+  el('addModalTitle').textContent = 'âž• Add New Candidate';
+  el('newName').value = '';
+  el('newEmail').value = '';
+  el('newRole').value = '';
+  el('newPhone').value = '';
+  el('addModal').classList.add('show');
+  setTimeout(() => el('newName').focus(), 50);
+}
+function openEdit() {
+  const id = el('candidatePicker').value;
+  const c = candidates.find(x => x.id === id);
+  if (!c) { showToast('âš ï¸ Select a candidate to edit first', 'var(--danger)'); return; }
+  editingId = id;
+  el('addModalTitle').textContent = 'âœï¸ Edit Candidate';
+  el('newName').value = c.name;
+  el('newEmail').value = c.email;
+  el('newRole').value = c.role || '';
+  el('newPhone').value = c.phone || '';
+  el('addModal').classList.add('show');
+}
+function closeAdd() { el('addModal').classList.remove('show'); }
+function saveCandidate() {
+  const name = val('newName');
+  const email = val('newEmail');
+  if (!name) { showToast('âš ï¸ Name is required', 'var(--danger)'); return; }
+  if (!email || !email.includes('@')) { showToast('âš ï¸ Valid email is required', 'var(--danger)'); return; }
+  const role = val('newRole');
+  const phone = val('newPhone');
+
+  if (editingId) {
+    const c = candidates.find(x => x.id === editingId);
+    if (c) { c.name = name; c.email = email; c.role = role; c.phone = phone; }
+    showToast('âœ… Candidate updated');
+  } else {
+    const dup = candidates.find(x => x.email.toLowerCase() === email.toLowerCase());
+    if (dup) { showToast('âš ï¸ A candidate with this email already exists', 'var(--danger)'); return; }
+    const newC = { id: uid(), name, email, role, phone };
+    candidates.push(newC);
+    showToast('âœ… Candidate added');
+    saveAll();
+    el('candidatePicker').value = newC.id;
+    onPickCandidate();
+    closeAdd();
+    return;
+  }
+  saveAll();
+  onPickCandidate();
+  closeAdd();
+}
+
+// ========== MANAGE ==========
+function openManage() {
+  renderCandList();
+  el('manageModal').classList.add('show');
+}
+function closeManage() { el('manageModal').classList.remove('show'); }
+function renderCandList() {
+  const list = el('candList');
+  if (candidates.length === 0) {
+    list.innerHTML = '<div class="empty">No candidates yet. Click "Add New" to start.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  candidates
+    .slice()
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'cand-item';
+      const sub = [c.role, c.visa, c.status, c.location].filter(Boolean).join(' â€¢ ');
+      row.innerHTML = `
+        <div>
+          <div class="nm">${escapeHtml(c.name)}</div>
+          ${sub ? `<div style="font-size:11px;color:var(--gray-500);">${escapeHtml(sub)}</div>` : ''}
+        </div>
+        <div class="em">${escapeHtml(c.email)}${c.phone ? '<br><span style="font-size:11px;">' + escapeHtml(c.phone) + '</span>' : ''}</div>
+        <div class="acts">
+          <button class="mini-btn" onclick="quickEdit('${c.id}')" title="Edit">âœï¸</button>
+          <button class="mini-btn danger" onclick="deleteCandidate('${c.id}')" title="Delete">ðŸ—‘ï¸</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+}
+function quickEdit(id) {
+  closeManage();
+  el('candidatePicker').value = id;
+  onPickCandidate();
+  openEdit();
+}
+function deleteCandidate(id) {
+  const c = candidates.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Delete ' + c.name + '? This cannot be undone.')) return;
+  candidates = candidates.filter(x => x.id !== id);
+  saveAll();
+  renderCandList();
+  if (el('candidatePicker').value === id) {
+    el('candidatePicker').value = '';
+    onPickCandidate();
+  }
+  showToast('ðŸ—‘ï¸ Candidate deleted');
+}
+
+// ========== CSV IMPORT/EXPORT ==========
+function openImport() { el('csvInput').value = ''; el('importModal').classList.add('show'); }
+function closeImport() { el('importModal').classList.remove('show'); }
+// Expected columns from the user's tracker (case-insensitive matching)
+const EXPECTED_COLS = [
+  'candidate', 'recruiter', 'team lead', 'status', 'experience', 'technology',
+  'visa', 'ead start date', 'ead end date', 'expiring in', 'vcs / sst',
+  'ack email', 'location', 'marketing start date', 'days',
+  "candidate's email address", 'phone number'
+];
+
+function splitRow(line) {
+  // Support tab-separated (Excel/Sheets paste) or comma-separated
+  const useTab = line.includes('\t');
+  const raw = useTab ? line.split('\t') : line.split(',');
+  return raw.map(p => p.trim().replace(/^["']|["']$/g, ''));
+}
+
+function normalizeHeader(h) {
+  return (h || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function importCSV() {
+  const text = el('csvInput').value.trim();
+  if (!text) { showToast('âš ï¸ Paste your tracker rows first', 'var(--danger)'); return; }
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { showToast('âš ï¸ Need a header row plus at least one candidate row', 'var(--danger)'); return; }
+
+  // Parse header
+  const headerCells = splitRow(lines[0]).map(normalizeHeader);
+
+  // Build index map: column-name -> index
+  const colIdx = {};
+  EXPECTED_COLS.forEach(c => {
+    const i = headerCells.indexOf(c);
+    if (i >= 0) colIdx[c] = i;
+  });
+
+  // Fallback: also accept simpler aliases
+  if (colIdx['candidate'] === undefined) {
+    const i = headerCells.findIndex(h => h === 'name' || h === 'candidate name');
+    if (i >= 0) colIdx['candidate'] = i;
+  }
+  if (colIdx["candidate's email address"] === undefined) {
+    const i = headerCells.findIndex(h => h === 'email' || h === 'email address' || h === 'candidate email');
+    if (i >= 0) colIdx["candidate's email address"] = i;
+  }
+  if (colIdx['phone number'] === undefined) {
+    const i = headerCells.findIndex(h => h === 'phone' || h === 'phone no' || h === 'mobile');
+    if (i >= 0) colIdx['phone number'] = i;
+  }
+  if (colIdx['technology'] === undefined) {
+    const i = headerCells.findIndex(h => h === 'role' || h === 'target role');
+    if (i >= 0) colIdx['technology'] = i;
+  }
+
+  if (colIdx['candidate'] === undefined || colIdx["candidate's email address"] === undefined) {
+    showToast('âš ï¸ Header must include "Candidate" and "Candidate\'s email address"', 'var(--danger)');
+    return;
+  }
+
+  const pick = (parts, key) => (colIdx[key] !== undefined ? (parts[colIdx[key]] || '') : '');
+
+  let added = 0, updated = 0, skipped = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const parts = splitRow(lines[i]);
+    if (parts.length < 2) { skipped++; continue; }
+    const name = pick(parts, 'candidate');
+    const email = pick(parts, "candidate's email address");
+    if (!name || !email || !email.includes('@')) { skipped++; continue; }
+
+    const record = {
+      name,
+      email,
+      role: pick(parts, 'technology'),
+      phone: pick(parts, 'phone number'),
+      recruiter: pick(parts, 'recruiter'),
+      teamLead: pick(parts, 'team lead'),
+      status: pick(parts, 'status'),
+      experience: pick(parts, 'experience'),
+      visa: pick(parts, 'visa'),
+      eadStart: pick(parts, 'ead start date'),
+      eadEnd: pick(parts, 'ead end date'),
+      expiringIn: pick(parts, 'expiring in'),
+      vcsSst: pick(parts, 'vcs / sst'),
+      ackEmail: pick(parts, 'ack email'),
+      location: pick(parts, 'location'),
+      marketingStart: pick(parts, 'marketing start date'),
+      days: pick(parts, 'days')
+    };
+
+    const existing = candidates.find(x => x.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      Object.assign(existing, record);
+      updated++;
+    } else {
+      candidates.push({ id: uid(), ...record });
+      added++;
+    }
+  }
+  saveAll();
+  closeImport();
+  let msg = 'âœ… Imported: ' + added + ' new';
+  if (updated) msg += ', ' + updated + ' updated';
+  if (skipped) msg += ', ' + skipped + ' skipped';
+  showToast(msg);
+}
+function exportCSV() {
+  if (candidates.length === 0) { showToast('âš ï¸ No candidates to export', 'var(--danger)'); return; }
+  const headers = [
+    'Candidate','Recruiter','Team Lead','Status','Experience','Technology',
+    'Visa','EAD Start Date','EAD End Date','Expiring in','VCS / SST',
+    'Ack Email','Location','Marketing start date','Days',
+    "Candidate's email address",'Phone number'
+  ];
+  const esc = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+  let csv = headers.map(esc).join(',') + '\n';
+  candidates.forEach(c => {
+    csv += [
+      c.name, c.recruiter, c.teamLead, c.status, c.experience, c.role,
+      c.visa, c.eadStart, c.eadEnd, c.expiringIn, c.vcsSst,
+      c.ackEmail, c.location, c.marketingStart, c.days,
+      c.email, c.phone
+    ].map(esc).join(',') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'candidates_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('ðŸ“¤ CSV exported');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+// ========== WEEK HELPERS ==========
+function parseDateInput(value) {
+  if (!value) return null;
+  const parts = String(value).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return new Date(value);
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+function dateInputValue(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+function formatDate(d) {
+  if (!d) return '';
+  const dt = parseDateInput(d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function monthKey(date) {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+}
+function monthLabel(year, monthIndex) {
+  return new Date(year, monthIndex, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+function populateReportMonths(selectedKey) {
+  const sel = el('reportMonth');
+  if (!sel) return;
+  const today = new Date();
+  const year = today.getFullYear();
+  sel.innerHTML = '';
+  for (let m = 0; m < 12; m++) {
+    const opt = document.createElement('option');
+    opt.value = year + '-' + String(m + 1).padStart(2, '0');
+    opt.textContent = monthLabel(year, m);
+    sel.appendChild(opt);
+  }
+  sel.value = selectedKey || monthKey(today);
+}
+function getWeeksForMonth(monthValue) {
+  const [year, month] = String(monthValue).split('-').map(Number);
+  const monthIndex = month - 1;
+  const first = new Date(year, monthIndex, 1);
+  const last = new Date(year, monthIndex + 1, 0);
+  const firstSunday = new Date(first);
+  firstSunday.setDate(first.getDate() + ((7 - first.getDay()) % 7));
+
+  const weeks = [];
+  for (let start = new Date(firstSunday); start <= last; start.setDate(start.getDate() + 7)) {
+    const weekStart = new Date(start);
+    const weekEnd = new Date(start);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weeks.push({
+      start: dateInputValue(weekStart),
+      end: dateInputValue(weekEnd),
+      label: `Week ${weeks.length + 1}: ${formatDate(dateInputValue(weekStart))} - ${formatDate(dateInputValue(weekEnd))}`
+    });
+  }
+
+  if (weeks.length === 0) {
+    weeks.push({
+      start: dateInputValue(first),
+      end: dateInputValue(last),
+      label: `Week 1: ${formatDate(dateInputValue(first))} - ${formatDate(dateInputValue(last))}`
+    });
+  }
+  return weeks;
+}
+function populateReportWeeks(selectedStart) {
+  const monthSel = el('reportMonth');
+  const weekSel = el('reportWeek');
+  if (!monthSel || !weekSel) return;
+  const weeks = getWeeksForMonth(monthSel.value);
+  weekSel.innerHTML = '';
+  weeks.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.start + '|' + w.end;
+    opt.textContent = w.label;
+    weekSel.appendChild(opt);
+  });
+  const match = weeks.find(w => w.start === selectedStart);
+  weekSel.value = match ? (match.start + '|' + match.end) : (weeks[0].start + '|' + weeks[0].end);
+}
+function applySelectedReportWeek() {
+  const weekSel = el('reportWeek');
+  if (!weekSel || !weekSel.value) return;
+  const [start, end] = weekSel.value.split('|');
+  el('weekStart').value = start;
+  el('weekEnd').value = end;
+  updateWeekLabel();
+  generatePreview();
+}
+function syncReportSelectorsToDates() {
+  const start = parseDateInput(val('weekStart'));
+  if (!start) return;
+  populateReportMonths(monthKey(start));
+  populateReportWeeks(dateInputValue(start));
+}
+function onReportMonthChange() {
+  populateReportWeeks();
+  applySelectedReportWeek();
+}
+function onReportWeekChange() {
+  applySelectedReportWeek();
+}
+function setDefaultWeek() {
+  const today = new Date();
+  const day = today.getDay(); // 0 Sun .. 6 Sat
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - day);
+  const saturday = new Date(sunday);
+  saturday.setDate(sunday.getDate() + 6);
+  el('weekStart').value = dateInputValue(sunday);
+  el('weekEnd').value = dateInputValue(saturday);
+  syncReportSelectorsToDates();
+  updateWeekLabel();
+}
+function updateWeekLabel() {
+  const s = val('weekStart');
+  const e = val('weekEnd');
+  el('weekLabel').textContent = (s && e) ? (formatDate(s) + ' â†’ ' + formatDate(e)) : 'Set the week below';
+}
+
+// ========== EMAIL BUILDERS ==========
+function getSelectedCandidate() {
+  const typed = {
+    name: val('candidateName'),
+    email: val('candidateEmail'),
+    role: val('candidateRole')
+  };
+  if (typed.name || typed.email || typed.role) {
+    return {
+      id: 'manual',
+      name: typed.name || '[Candidate Name]',
+      email: typed.email,
+      role: typed.role
+    };
+  }
+  const id = el('candidatePicker').value;
+  return candidates.find(x => x.id === id) || null;
+}
+
+function buildSubject() {
+  const c = getSelectedCandidate();
+  const name = c ? c.name : '[Candidate Name]';
+  const s = val('weekStart');
+  const e = val('weekEnd');
+  const period = (s && e) ? (formatDate(s) + ' - ' + formatDate(e)) : '[Week Dates]';
+  return 'Weekly Candidate Activity Update | ' + name + ' | ' + period;
+}
+
+function getEmailContext() {
+  const c = getSelectedCandidate();
+  const s = val('weekStart');
+  const e = val('weekEnd');
+  return {
+    name: c ? c.name : '[Candidate Name]',
+    role: c && c.role ? c.role : '',
+    senderName: val('senderName'),
+    senderTitle: val('senderTitle'),
+    senderEmail: val('senderEmail') || '',
+    weekStr: (s && e) ? (formatDate(s) + ' â€“ ' + formatDate(e)) : '[Week Dates]',
+    apps: num('applications'),
+    scr: num('screenings'),
+    intv: num('interviews'),
+    asmt: num('assessments'),
+    rtr: num('rtr'),
+    linkedin: num('offers')
+  };
+}
+
+function signatureLines(d) {
+  return [d.senderName, d.senderTitle, d.senderEmail].filter(Boolean);
+}
+
+function buildBody() {
+  const d = getEmailContext();
+  const signature = signatureLines(d).join('\n');
+
+  return `Dear ${d.name},
+
+I hope you are having a wonderful week!
+
+First and foremost, we want to thank you for partnering with us. Navigating a career transition is a shared journey, and we are incredibly grateful for the trust you place in our team every day.
+
+Please find your Weekly Candidate Activity Report below for the period of ${d.weekStr}. This layout tracks our active outreach and pipeline management on your behalf:
+
+Your Weekly Activity Snapshot:
+
+- Applications Submitted: ${d.apps}
+- Submissions (RTR): ${d.rtr}
+- Screening Calls: ${d.scr}
+- Interviews Scheduled: ${d.intv}
+- Assessments: ${d.asmt}
+- LinkedIn Connections: ${d.linkedin}
+
+Behind the Scenes This Week:
+
+Even when the numbers reflect a quieter market cycle, please know that our momentum doesn't stop. We are continuously mapping your profile against upcoming pipeline requisitions, engaging our network of decision-makers, and waiting for the right strategic alignments to open up. Exceptional roles require intentional timing, and we are working tirelessly to ensure your profile lands on the right desks with maximum impact.
+
+We Value Your Feedback!
+
+Your peace of mind and satisfaction are our top priorities. To ensure we are supporting you in the best possible way, we would love to get your quick thoughts:
+
+- How would you rate your recruiter's communication and the frequency of the job search updates they provide?
+
+Kindly reply directly to this email with your feedback, or let us know if there is anything we can do to better support you right now. We love collaborating closely with our candidates and are always ready to adapt our strategy.
+
+Thank you again for your dedication and brilliant partnership. The right door is going to open soon, and we are proud to be walking this path right alongside you.
+
+Wishing you a fantastic week ahead!
+
+Warm regards,
+${signature ? '\n' + signature : ''}`;
+}
+
+function buildHtmlBody() {
+  const d = getEmailContext();
+  const signature = signatureLines(d).map(escapeHtml).join('<br>');
+
+  return `<div class="email-letter" style="font-family:'Times New Roman', Times, serif; color:#000000; background:#ffffff; font-size:12pt; line-height:1.22; padding:8px;">
+    <p style="margin:0 0 18px;">Dear ${escapeHtml(d.name)},</p>
+
+    <p style="margin:0 0 18px;">I hope you are having a wonderful week!</p>
+
+    <p style="margin:0 0 18px;">First and foremost, we want to thank you for partnering with us. Navigating a career transition is a shared journey, and we are incredibly grateful for the trust you place in our team every day.</p>
+
+    <p style="margin:0 0 18px;">Please find your Weekly Candidate Activity Report below for the period of ${escapeHtml(d.weekStr)}. This layout tracks our active outreach and pipeline management on your behalf:</p>
+
+    <p style="margin:0 0 14px;"><strong>Your Weekly Activity Snapshot:</strong></p>
+
+    <ul style="margin:0 0 18px 28px; padding-left:18px;">
+      <li><strong>Applications Submitted:</strong> ${d.apps}</li>
+      <li><strong>Submissions (RTR):</strong> ${d.rtr}</li>
+      <li><strong>Screening Calls:</strong> ${d.scr}</li>
+      <li><strong>Interviews Scheduled:</strong> ${d.intv}</li>
+      <li><strong>Assessments:</strong> ${d.asmt}</li>
+      <li><strong>LinkedIn Connections:</strong> ${d.linkedin}</li>
+    </ul>
+
+    <p style="margin:0 0 18px;"><strong>Behind the Scenes This Week:</strong> Even when the numbers reflect a quieter market cycle, please know that our momentum doesn't stop. We are continuously mapping your profile against upcoming pipeline requisitions, engaging our network of decision-makers, and waiting for the right strategic alignments to open up. Exceptional roles require intentional timing, and we are working tirelessly to ensure your profile lands on the right desks with maximum impact.</p>
+
+    <p style="margin:0 0 18px;"><strong>We Value Your Feedback!</strong> Your peace of mind and satisfaction are our top priorities. To ensure we are supporting you in the best possible way, we would love to get your quick thoughts:</p>
+
+    <ul style="margin:0 0 18px 28px; padding-left:18px;">
+      <li><strong>How would you rate your recruiter's communication and the frequency of the job search updates they provide?</strong></li>
+    </ul>
+
+    <p style="margin:0 0 18px;">Kindly reply directly to this email with your feedback, or let us know if there is anything we can do to better support you right now. We love collaborating closely with our candidates and are always ready to adapt our strategy.</p>
+
+    <p style="margin:0 0 18px;">Thank you again for your dedication and brilliant partnership. The right door is going to open soon, and we are proud to be walking this path right alongside you.</p>
+
+    <p style="margin:0 0 18px;">Wishing you a fantastic week ahead!</p>
+
+    <p style="margin:0;">Warm regards,${signature ? '<br>' + signature : ''}</p>
+  </div>`;
+}
+
+function generatePreview() {
+  const c = getSelectedCandidate();
+  el('prevTo').textContent = (c && c.email) ? (c.name + ' <' + c.email + '>') : 'â€” Enter candidate email â€”';
+  el('prevFrom').textContent = val('senderEmail') || 'â€”';
+  el('prevSubject').textContent = buildSubject();
+  el('prevBody').innerHTML = buildHtmlBody();
+}
+
+// ========== ACTIONS ==========
+function openInWebOutlook() {
+  const c = saveTypedCandidate(false) || getSelectedCandidate();
+  if (!c || !c.email || !c.email.includes('@')) { showToast('âš ï¸ Enter a valid candidate email first', 'var(--danger)'); return; }
+  const subject = encodeURIComponent(buildSubject());
+  const richBody = encodeURIComponent(buildHtmlBody());
+  const plainBody = encodeURIComponent(buildBody()).replace(/%0A/g, '%0D%0A');
+  const to = encodeURIComponent(c.email);
+  // Outlook Web accepts rich HTML in the body parameter more reliably than mailto.
+  const url = `https://outlook.office.com/mail/0/deeplink/compose?to=${to}&subject=${subject}&body=${richBody}`;
+  const opened = window.open('', '_blank');
+  if (opened) {
+    opened.location.href = url;
+    showToast('Opening Outlook on the Web...');
+    return;
+  }
+  window.location.href = `mailto:${to}?subject=${subject}&body=${plainBody}`;
+  showToast('Popup blocked. Opening your default mail app instead.');
+}
+
+function copyRichEmail(html, text) {
+  const temp = document.createElement('div');
+  temp.setAttribute('contenteditable', 'true');
+  temp.style.position = 'fixed';
+  temp.style.left = '-9999px';
+  temp.style.top = '0';
+  temp.style.width = '900px';
+  temp.style.background = '#ffffff';
+  temp.style.color = '#000000';
+  temp.innerHTML = html;
+  document.body.appendChild(temp);
+
+  const selection = window.getSelection();
+  const previousRange = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
+  const range = document.createRange();
+  range.selectNodeContents(temp);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  let copied = false;
+  try { copied = document.execCommand('copy'); } catch (e) { copied = false; }
+
+  selection.removeAllRanges();
+  if (previousRange) selection.addRange(previousRange);
+  document.body.removeChild(temp);
+
+  if (copied) return Promise.resolve();
+  return navigator.clipboard.writeText(text);
+}
+
+function copyEmailBody() {
+  saveTypedCandidate(false);
+  const html = buildHtmlBody();
+  const text = buildBody();
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' })
+      })
+    ]).then(() => {
+      showToast('ðŸ“‹ Formatted email body copied');
+    }).catch(() => {
+      copyRichEmail(html, text)
+        .then(() => showToast('Formatted email body copied'))
+        .catch(() => showToast('âš ï¸ Copy failed', 'var(--danger)'));
+    });
+    return;
+  }
+  copyRichEmail(html, text).then(() => {
+    showToast('Formatted email body copied');
+  }).catch(() => showToast('âš ï¸ Copy failed', 'var(--danger)'));
+}
+
+function resetStats() {
+  ['applications','screenings','interviews','assessments','rtr','offers']
+    .forEach(id => el(id).value = 0);
+  generatePreview();
+  showToast('ðŸ”„ Numbers reset');
+}
+
+// ========== INIT ==========
+document.addEventListener('input', generatePreview);
+['candidateName', 'candidateEmail', 'candidateRole'].forEach(id => {
+  el(id).addEventListener('input', scheduleTypedCandidateSave);
+  el(id).addEventListener('blur', () => saveTypedCandidate(false));
+});
+el('weekStart').addEventListener('change', () => { updateWeekLabel(); syncReportSelectorsToDates(); generatePreview(); });
+el('weekEnd').addEventListener('change', () => { updateWeekLabel(); syncReportSelectorsToDates(); generatePreview(); });
+
+// Close modals on background click
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('show'); });
+});
+
+// Boot
+loadCandidates();
+setDefaultWeek();
+generatePreview();
+</script></body>
+</html>
