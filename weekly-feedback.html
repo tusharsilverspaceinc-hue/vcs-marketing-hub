@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -890,7 +890,7 @@
   }
   .section h2::before,
   .preview-head h2::before {
-    content: "â€”";
+    content: "—";
     color: #14a2e2;
     margin-right: 10px;
   }
@@ -1722,7 +1722,7 @@
             <div>
               <label>Load saved candidate (optional)</label>
               <select id="candidatePicker" onchange="onPickCandidate()">
-                <option value="">â€” Choose saved candidate â€”</option>
+                <option value="">— Choose saved candidate —</option>
               </select>
             </div>
             <button class="btn btn-secondary" onclick="openManage()">Manage List</button>
@@ -1814,9 +1814,9 @@
       </div>
       <div class="preview">
         <div class="meta">
-          <div><strong>To:</strong> <span id="prevTo">â€”</span></div>
-          <div><strong>From:</strong> <span id="prevFrom">â€”</span></div>
-          <div><strong>Subject:</strong> <span id="prevSubject">â€”</span></div>
+          <div><strong>To:</strong> <span id="prevTo">—</span></div>
+          <div><strong>From:</strong> <span id="prevFrom">—</span></div>
+          <div><strong>Subject:</strong> <span id="prevSubject">—</span></div>
         </div>
         <div id="prevBody" class="body"></div>
       </div>
@@ -1828,8 +1828,8 @@
 <div class="modal-bg" id="addModal">
   <div class="modal">
     <div class="modal-head">
-      <h3 id="addModalTitle">âž• Add New Candidate</h3>
-      <button class="close-x" onclick="closeAdd()">Ã—</button>
+      <h3 id="addModalTitle">➕ Add New Candidate</h3>
+      <button class="close-x" onclick="closeAdd()">×</button>
     </div>
     <div class="grp">
       <label>Full Name *</label>
@@ -1848,7 +1848,7 @@
       <input type="text" id="newPhone" placeholder="+1 555 555 5555" />
     </div>
     <div class="actions">
-      <button class="btn btn-primary" onclick="saveCandidate()">ðŸ’¾ Save Candidate</button>
+      <button class="btn btn-primary" onclick="saveCandidate()">💾 Save Candidate</button>
     </div>
   </div>
 </div>
@@ -1857,16 +1857,16 @@
 <div class="modal-bg" id="manageModal">
   <div class="modal">
     <div class="modal-head">
-      <h3>ðŸ‘¥ Manage Candidates</h3>
-      <button class="close-x" onclick="closeManage()">Ã—</button>
+      <h3>👥 Manage Candidates</h3>
+      <button class="close-x" onclick="closeManage()">×</button>
     </div>
     <p style="font-size:13px; color: var(--gray-500); margin-bottom: 8px;">
       Your candidate list is saved in this browser. Use Import/Export CSV to back up or share.
     </p>
     <div class="cand-list" id="candList"></div>
     <div class="actions" style="grid-template-columns: 1fr 1fr;">
-      <button class="btn btn-secondary" onclick="closeManage(); openAdd();">âž• Add New</button>
-      <button class="btn btn-secondary" onclick="closeManage(); openImport();">ðŸ“¥ Import CSV</button>
+      <button class="btn btn-secondary" onclick="closeManage(); openAdd();">➕ Add New</button>
+      <button class="btn btn-secondary" onclick="closeManage(); openImport();">📥 Import CSV</button>
     </div>
   </div>
 </div>
@@ -1875,8 +1875,8 @@
 <div class="modal-bg" id="importModal">
   <div class="modal">
     <div class="modal-head">
-      <h3>ðŸ“¥ Import Candidates from CSV</h3>
-      <button class="close-x" onclick="closeImport()">Ã—</button>
+      <h3>📥 Import Candidates from CSV</h3>
+      <button class="close-x" onclick="closeImport()">×</button>
     </div>
     <p style="font-size:13px; color: var(--gray-500); margin-bottom: 8px; line-height: 1.5;">
       Paste your candidate tracker rows below. The first row should be the <strong>header</strong> exactly as in your sheet. Tabs (from Excel/Google Sheets) and commas both work.
@@ -1885,11 +1885,11 @@
       Candidate&nbsp;|&nbsp;Recruiter&nbsp;|&nbsp;Team Lead&nbsp;|&nbsp;Status&nbsp;|&nbsp;Experience&nbsp;|&nbsp;Technology&nbsp;|&nbsp;Visa&nbsp;|&nbsp;EAD Start Date&nbsp;|&nbsp;EAD End Date&nbsp;|&nbsp;Expiring in&nbsp;|&nbsp;VCS / SST&nbsp;|&nbsp;Ack Email&nbsp;|&nbsp;Location&nbsp;|&nbsp;Marketing start date&nbsp;|&nbsp;Days&nbsp;|&nbsp;Candidate's email address&nbsp;|&nbsp;Phone number
     </div>
     <p style="font-size:12px; color: var(--gray-500); margin-bottom: 10px;">
-      âœ… Tip: select the header row + data rows from your sheet and paste directly here.
+      ✅ Tip: select the header row + data rows from your sheet and paste directly here.
     </p>
     <textarea id="csvInput" rows="10" style="width:100%; padding:12px; border:1.5px solid var(--gray-200); border-radius:8px; font-family:monospace; font-size:12px; resize:vertical;" placeholder="Candidate&#9;Recruiter&#9;Team Lead&#9;Status&#9;Experience&#9;Technology&#9;Visa&#9;EAD Start Date&#9;EAD End Date&#9;Expiring in&#9;VCS / SST&#9;Ack Email&#9;Location&#9;Marketing start date&#9;Days&#9;Candidate's email address&#9;Phone number&#10;John Smith&#9;Tushar&#9;Rahul&#9;Active&#9;8 yrs&#9;Java/Spring&#9;H1B&#9;2024-01-15&#9;2027-01-14&#9;245&#9;VCS&#9;Yes&#9;NJ, USA&#9;2026-05-12&#9;9&#9;john@email.com&#9;+1 555 1234"></textarea>
     <div class="actions" style="grid-template-columns: 1fr;">
-      <button class="btn btn-primary" onclick="importCSV()">ðŸ“¥ Import Candidates</button>
+      <button class="btn btn-primary" onclick="importCSV()">📥 Import Candidates</button>
     </div>
   </div>
 </div>
@@ -1937,14 +1937,14 @@ function updateCount() {
 function renderPicker(selectedId) {
   const sel = el('candidatePicker');
   const current = selectedId || sel.value;
-  sel.innerHTML = '<option value="">â€” Choose saved candidate â€”</option>';
+  sel.innerHTML = '<option value="">— Choose saved candidate —</option>';
   candidates
     .slice()
     .sort((a,b) => a.name.localeCompare(b.name))
     .forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = c.name + ' â€” ' + c.email;
+      opt.textContent = c.name + ' — ' + c.email;
       sel.appendChild(opt);
     });
   if (current) sel.value = current;
@@ -2012,7 +2012,7 @@ function onPickCandidate() {
 // ========== ADD / EDIT ==========
 function openAdd() {
   editingId = null;
-  el('addModalTitle').textContent = 'âž• Add New Candidate';
+  el('addModalTitle').textContent = '➕ Add New Candidate';
   el('newName').value = '';
   el('newEmail').value = '';
   el('newRole').value = '';
@@ -2023,9 +2023,9 @@ function openAdd() {
 function openEdit() {
   const id = el('candidatePicker').value;
   const c = candidates.find(x => x.id === id);
-  if (!c) { showToast('âš ï¸ Select a candidate to edit first', 'var(--danger)'); return; }
+  if (!c) { showToast('Warning: Select a candidate to edit first', 'var(--danger)'); return; }
   editingId = id;
-  el('addModalTitle').textContent = 'âœï¸ Edit Candidate';
+  el('addModalTitle').textContent = 'Edit Edit Candidate';
   el('newName').value = c.name;
   el('newEmail').value = c.email;
   el('newRole').value = c.role || '';
@@ -2036,21 +2036,21 @@ function closeAdd() { el('addModal').classList.remove('show'); }
 function saveCandidate() {
   const name = val('newName');
   const email = val('newEmail');
-  if (!name) { showToast('âš ï¸ Name is required', 'var(--danger)'); return; }
-  if (!email || !email.includes('@')) { showToast('âš ï¸ Valid email is required', 'var(--danger)'); return; }
+  if (!name) { showToast('Warning: Name is required', 'var(--danger)'); return; }
+  if (!email || !email.includes('@')) { showToast('Warning: Valid email is required', 'var(--danger)'); return; }
   const role = val('newRole');
   const phone = val('newPhone');
 
   if (editingId) {
     const c = candidates.find(x => x.id === editingId);
     if (c) { c.name = name; c.email = email; c.role = role; c.phone = phone; }
-    showToast('âœ… Candidate updated');
+    showToast('✅ Candidate updated');
   } else {
     const dup = candidates.find(x => x.email.toLowerCase() === email.toLowerCase());
-    if (dup) { showToast('âš ï¸ A candidate with this email already exists', 'var(--danger)'); return; }
+    if (dup) { showToast('Warning: A candidate with this email already exists', 'var(--danger)'); return; }
     const newC = { id: uid(), name, email, role, phone };
     candidates.push(newC);
-    showToast('âœ… Candidate added');
+    showToast('✅ Candidate added');
     saveAll();
     el('candidatePicker').value = newC.id;
     onPickCandidate();
@@ -2081,7 +2081,7 @@ function renderCandList() {
     .forEach(c => {
       const row = document.createElement('div');
       row.className = 'cand-item';
-      const sub = [c.role, c.visa, c.status, c.location].filter(Boolean).join(' â€¢ ');
+      const sub = [c.role, c.visa, c.status, c.location].filter(Boolean).join(' • ');
       row.innerHTML = `
         <div>
           <div class="nm">${escapeHtml(c.name)}</div>
@@ -2089,8 +2089,8 @@ function renderCandList() {
         </div>
         <div class="em">${escapeHtml(c.email)}${c.phone ? '<br><span style="font-size:11px;">' + escapeHtml(c.phone) + '</span>' : ''}</div>
         <div class="acts">
-          <button class="mini-btn" onclick="quickEdit('${c.id}')" title="Edit">âœï¸</button>
-          <button class="mini-btn danger" onclick="deleteCandidate('${c.id}')" title="Delete">ðŸ—‘ï¸</button>
+          <button class="mini-btn" onclick="quickEdit('${c.id}')" title="Edit">Edit</button>
+          <button class="mini-btn danger" onclick="deleteCandidate('${c.id}')" title="Delete">Delete</button>
         </div>
       `;
       list.appendChild(row);
@@ -2113,7 +2113,7 @@ function deleteCandidate(id) {
     el('candidatePicker').value = '';
     onPickCandidate();
   }
-  showToast('ðŸ—‘ï¸ Candidate deleted');
+  showToast('Delete Candidate deleted');
 }
 
 // ========== CSV IMPORT/EXPORT ==========
@@ -2140,9 +2140,9 @@ function normalizeHeader(h) {
 
 function importCSV() {
   const text = el('csvInput').value.trim();
-  if (!text) { showToast('âš ï¸ Paste your tracker rows first', 'var(--danger)'); return; }
+  if (!text) { showToast('Warning: Paste your tracker rows first', 'var(--danger)'); return; }
   const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) { showToast('âš ï¸ Need a header row plus at least one candidate row', 'var(--danger)'); return; }
+  if (lines.length < 2) { showToast('Warning: Need a header row plus at least one candidate row', 'var(--danger)'); return; }
 
   // Parse header
   const headerCells = splitRow(lines[0]).map(normalizeHeader);
@@ -2173,7 +2173,7 @@ function importCSV() {
   }
 
   if (colIdx['candidate'] === undefined || colIdx["candidate's email address"] === undefined) {
-    showToast('âš ï¸ Header must include "Candidate" and "Candidate\'s email address"', 'var(--danger)');
+    showToast('Warning: Header must include "Candidate" and "Candidate\'s email address"', 'var(--danger)');
     return;
   }
 
@@ -2218,13 +2218,13 @@ function importCSV() {
   }
   saveAll();
   closeImport();
-  let msg = 'âœ… Imported: ' + added + ' new';
+  let msg = '✅ Imported: ' + added + ' new';
   if (updated) msg += ', ' + updated + ' updated';
   if (skipped) msg += ', ' + skipped + ' skipped';
   showToast(msg);
 }
 function exportCSV() {
-  if (candidates.length === 0) { showToast('âš ï¸ No candidates to export', 'var(--danger)'); return; }
+  if (candidates.length === 0) { showToast('Warning: No candidates to export', 'var(--danger)'); return; }
   const headers = [
     'Candidate','Recruiter','Team Lead','Status','Experience','Technology',
     'Visa','EAD Start Date','EAD End Date','Expiring in','VCS / SST',
@@ -2248,7 +2248,7 @@ function exportCSV() {
   a.download = 'candidates_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('ðŸ“¤ CSV exported');
+  showToast('📤 CSV exported');
 }
 
 function escapeHtml(s) {
@@ -2376,7 +2376,7 @@ function setDefaultWeek() {
 function updateWeekLabel() {
   const s = val('weekStart');
   const e = val('weekEnd');
-  el('weekLabel').textContent = (s && e) ? (formatDate(s) + ' â†’ ' + formatDate(e)) : 'Set the week below';
+  el('weekLabel').textContent = (s && e) ? (formatDate(s) + ' → ' + formatDate(e)) : 'Set the week below';
 }
 
 // ========== EMAIL BUILDERS ==========
@@ -2417,7 +2417,7 @@ function getEmailContext() {
     senderName: val('senderName'),
     senderTitle: val('senderTitle'),
     senderEmail: val('senderEmail') || '',
-    weekStr: (s && e) ? (formatDate(s) + ' â€“ ' + formatDate(e)) : '[Week Dates]',
+    weekStr: (s && e) ? (formatDate(s) + ' – ' + formatDate(e)) : '[Week Dates]',
     apps: num('applications'),
     scr: num('screenings'),
     intv: num('interviews'),
@@ -2516,8 +2516,8 @@ function buildHtmlBody() {
 
 function generatePreview() {
   const c = getSelectedCandidate();
-  el('prevTo').textContent = (c && c.email) ? (c.name + ' <' + c.email + '>') : 'â€” Enter candidate email â€”';
-  el('prevFrom').textContent = val('senderEmail') || 'â€”';
+  el('prevTo').textContent = (c && c.email) ? (c.name + ' <' + c.email + '>') : '— Enter candidate email —';
+  el('prevFrom').textContent = val('senderEmail') || '—';
   el('prevSubject').textContent = buildSubject();
   el('prevBody').innerHTML = buildHtmlBody();
 }
@@ -2525,7 +2525,7 @@ function generatePreview() {
 // ========== ACTIONS ==========
 function openInWebOutlook() {
   const c = saveTypedCandidate(false) || getSelectedCandidate();
-  if (!c || !c.email || !c.email.includes('@')) { showToast('âš ï¸ Enter a valid candidate email first', 'var(--danger)'); return; }
+  if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
   const subject = encodeURIComponent(buildSubject());
   const richBody = encodeURIComponent(buildHtmlBody());
   const plainBody = encodeURIComponent(buildBody()).replace(/%0A/g, '%0D%0A');
@@ -2583,24 +2583,24 @@ function copyEmailBody() {
         'text/plain': new Blob([text], { type: 'text/plain' })
       })
     ]).then(() => {
-      showToast('ðŸ“‹ Formatted email body copied');
+      showToast('📋 Formatted email body copied');
     }).catch(() => {
       copyRichEmail(html, text)
         .then(() => showToast('Formatted email body copied'))
-        .catch(() => showToast('âš ï¸ Copy failed', 'var(--danger)'));
+        .catch(() => showToast('Warning: Copy failed', 'var(--danger)'));
     });
     return;
   }
   copyRichEmail(html, text).then(() => {
     showToast('Formatted email body copied');
-  }).catch(() => showToast('âš ï¸ Copy failed', 'var(--danger)'));
+  }).catch(() => showToast('Warning: Copy failed', 'var(--danger)'));
 }
 
 function resetStats() {
   ['applications','screenings','interviews','assessments','rtr','offers']
     .forEach(id => el(id).value = 0);
   generatePreview();
-  showToast('ðŸ”„ Numbers reset');
+  showToast('🔄 Numbers reset');
 }
 
 // ========== INIT ==========

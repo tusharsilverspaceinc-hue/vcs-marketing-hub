@@ -3069,15 +3069,15 @@ function enhanceEmbeddedIframe(config) {
     "  }\n" +
     "  function sanitizeBrokenText() {\n" +
     "    var replacements = [\n" +
-    "      ['Employee self-assessment on Submission, Interview and PO ClosuresÂ', 'Employee self-assessment on Submission, Interview and PO Closures'],\n" +
-    "      ['Team Lead feedback on Submission, Interview and PO ClosuresÂ', 'Team Lead feedback on Submission, Interview and PO Closures'],\n" +
-    "      ['Employee self-assessment on Productivity, Work Ethics & Innovation, and DisciplineÂ', 'Employee self-assessment on Productivity, Work Ethics & Innovation, and Discipline'],\n" +
-    "      ['Team Lead feedback on Productivity, Work Ethics & Innovation, and DisciplineÂ', 'Team Lead feedback on Productivity, Work Ethics & Innovation, and Discipline'],\n" +
-    "      ['Additional Tasks Â· Areas for Development Â· Goals Achievement Â· Communication & Collaboration Â· Training & Upskilling Â· Overall FeedbackÂ', 'Additional Tasks · Areas for Development · Goals Achievement · Communication & Collaboration · Training & Upskilling · Overall Feedback'],\n" +
-    "      ['Â', ''],\n" +
-    "      ['â€¡', ''],\n" +
-    "      ['âœ¨', ''],\n" +
-    "      ['ðŸ’¡', '']\n" +
+    "      ['Employee self-assessment on Submission, Interview and PO Closures', 'Employee self-assessment on Submission, Interview and PO Closures'],\n" +
+    "      ['Team Lead feedback on Submission, Interview and PO Closures', 'Team Lead feedback on Submission, Interview and PO Closures'],\n" +
+    "      ['Employee self-assessment on Productivity, Work Ethics & Innovation, and Discipline', 'Employee self-assessment on Productivity, Work Ethics & Innovation, and Discipline'],\n" +
+    "      ['Team Lead feedback on Productivity, Work Ethics & Innovation, and Discipline', 'Team Lead feedback on Productivity, Work Ethics & Innovation, and Discipline'],\n" +
+    "      ['Additional Tasks · Areas for Development · Goals Achievement · Communication & Collaboration · Training & Upskilling · Overall Feedback', 'Additional Tasks · Areas for Development · Goals Achievement · Communication & Collaboration · Training & Upskilling · Overall Feedback'],\n" +
+    "      ['', ''],\n" +
+    "      ['‡', ''],\n" +
+    "      ['✨', ''],\n" +
+    "      ['💡', '']\n" +
     "    ];\n" +
     "    Array.prototype.forEach.call(document.querySelectorAll('textarea, input[placeholder]'), function(el) {\n" +
     "      var text = el.getAttribute('placeholder');\n" +
@@ -3088,7 +3088,7 @@ function enhanceEmbeddedIframe(config) {
     "    Array.prototype.forEach.call(document.querySelectorAll('*'), function(el) {\n" +
     "      if (!el.childNodes || el.childNodes.length !== 1 || !el.firstChild || el.firstChild.nodeType !== 3) return;\n" +
     "      var text = el.textContent;\n" +
-    "      if (!text || (text.indexOf('Â') === -1 && text.indexOf('â') === -1 && text.indexOf('ðŸ') === -1)) return;\n" +
+    "      if (!text || (text.indexOf('') === -1 && false)) return;\n" +
     "      replacements.forEach(function(pair) { text = text.split(pair[0]).join(pair[1]); });\n" +
     "      el.textContent = text.trim();\n" +
     "    });\n" +
@@ -3107,7 +3107,7 @@ function enhanceEmbeddedIframe(config) {
     "      var placeholder = el.getAttribute('placeholder');\n" +
     "      if (!placeholder) return;\n" +
     "      fixes.forEach(function(pair) { placeholder = placeholder.replace(pair[0], pair[1]); });\n" +
-    "      placeholder = placeholder.replace(/[ÂÃ][^A-Za-z0-9 ]*/g, '').trim();\n" +
+    "      placeholder = placeholder.replace(/[\u00c3][^A-Za-z0-9 ]*/g, '').trim();\n" +
     "      el.setAttribute('placeholder', placeholder);\n" +
     "    });\n" +
     "    Array.prototype.forEach.call(document.querySelectorAll('textarea, label, p, span, div'), function(el) {\n" +
@@ -3115,7 +3115,7 @@ function enhanceEmbeddedIframe(config) {
     "      var text = el.textContent;\n" +
     "      if (!text) return;\n" +
     "      fixes.forEach(function(pair) { text = text.replace(pair[0], pair[1]); });\n" +
-    "      text = text.replace(/[ÂÃ][^A-Za-z0-9 ]*/g, '').trim();\n" +
+    "      text = text.replace(/[\u00c3][^A-Za-z0-9 ]*/g, '').trim();\n" +
     "      el.textContent = text;\n" +
     "    });\n" +
     "  }\n" +
@@ -3549,7 +3549,7 @@ function poRows(total, amd, ggr, lko) {
     ['TOTAL –', total],
     ['AMD –',   amd],
     ['GGR –',   ggr],
-    ['LKO â€“',   lko],
+    ['LKO –',   lko],
   ];
   return rows.map((r, i) => {
     const groupCell = i === 0
