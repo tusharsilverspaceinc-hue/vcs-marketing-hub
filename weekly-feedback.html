@@ -1795,7 +1795,7 @@
         <button class="btn btn-primary" onclick="openInWebOutlook()">Open in Web Outlook</button>
         <button class="btn btn-success" onclick="copyEmailBody()">Copy Body</button>
         <button class="btn btn-secondary" onclick="resetStats()">Reset Numbers</button>
-        <p class="hint">Tip: "Open in Web Outlook" launches outlook.office.com with a new email drafted. Review once, then send.</p>
+        <p class="hint">Tip: "Open in Web Outlook" launches a short Outlook draft and copies the formatted body. Paste it into the message before sending.</p>
       </div>
     </div>
 
@@ -2546,19 +2546,20 @@ function openInWebOutlook() {
   const c = saveTypedCandidate(false) || getSelectedCandidate();
   if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
   const subject = encodeURIComponent(buildSubject());
-  const richBody = encodeURIComponent(buildHtmlBody());
-  const plainBody = encodeURIComponent(buildBody()).replace(/%0A/g, '%0D%0A');
   const to = encodeURIComponent(c.email);
-  // Outlook Web accepts rich HTML in the body parameter more reliably than mailto.
-  const url = `https://outlook.office.com/mail/0/deeplink/compose?to=${to}&subject=${subject}&body=${richBody}`;
+  const html = buildHtmlBody();
+  const text = buildBody();
+  const url = `https://outlook.office.com/mail/0/deeplink/compose?to=${to}&subject=${subject}`;
   const opened = window.open('', '_blank');
+  const copyPromise = copyRichEmail(html, text)
+    .then(() => showToast('Outlook opened. Formatted body copied - paste it into the message.'))
+    .catch(() => showToast('Outlook opened. Use Copy Body, then paste into the message.', 'var(--warning)'));
   if (opened) {
     opened.location.href = url;
-    showToast('Opening Outlook on the Web...');
     return;
   }
-  window.location.href = `mailto:${to}?subject=${subject}&body=${plainBody}`;
-  showToast('Popup blocked. Opening your default mail app instead.');
+  window.location.href = `mailto:${to}?subject=${subject}`;
+  copyPromise.finally(() => showToast('Popup blocked. Body copied; paste it into your mail app.'));
 }
 
 function copyRichEmail(html, text) {
