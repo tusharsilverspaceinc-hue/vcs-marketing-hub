@@ -1734,7 +1734,7 @@
       <div class="section">
       <div class="section-kicker">Section 02 / Reporting Timeline</div>
       <h2 class="split-heading"><span class="heading-accent">Report</span> <span class="heading-main">Period</span></h2>
-      <p class="section-copy">Select the month and week. The start and end dates will update automatically.</p>
+      <p class="section-copy">Select the month and week. The start and end dates will update automatically from Monday to Friday.</p>
       <div class="row">
         <div class="grp">
           <label>Report Month</label>
@@ -2281,6 +2281,18 @@ function monthKey(date) {
 function monthLabel(year, monthIndex) {
   return new Date(year, monthIndex, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
+function getMondayForWeek(date) {
+  const monday = new Date(date);
+  const day = monday.getDay(); // 0 Sun .. 6 Sat
+  monday.setDate(monday.getDate() - ((day + 6) % 7));
+  return monday;
+}
+function getWorkWeekForDate(date) {
+  const start = getMondayForWeek(date);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 4);
+  return { start, end };
+}
 function populateReportMonths(selectedKey) {
   const sel = el('reportMonth');
   if (!sel) return;
@@ -2300,14 +2312,14 @@ function getWeeksForMonth(monthValue) {
   const monthIndex = month - 1;
   const first = new Date(year, monthIndex, 1);
   const last = new Date(year, monthIndex + 1, 0);
-  const firstSunday = new Date(first);
-  firstSunday.setDate(first.getDate() + ((7 - first.getDay()) % 7));
+  const firstMonday = new Date(first);
+  firstMonday.setDate(first.getDate() + ((8 - first.getDay()) % 7));
 
   const weeks = [];
-  for (let start = new Date(firstSunday); start <= last; start.setDate(start.getDate() + 7)) {
+  for (let start = new Date(firstMonday); start <= last; start.setDate(start.getDate() + 7)) {
     const weekStart = new Date(start);
     const weekEnd = new Date(start);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setDate(weekStart.getDate() + 4);
     weeks.push({
       start: dateInputValue(weekStart),
       end: dateInputValue(weekEnd),
@@ -2316,10 +2328,11 @@ function getWeeksForMonth(monthValue) {
   }
 
   if (weeks.length === 0) {
+    const fallbackWeek = getWorkWeekForDate(first);
     weeks.push({
-      start: dateInputValue(first),
-      end: dateInputValue(last),
-      label: `Week 1: ${formatDate(dateInputValue(first))} - ${formatDate(dateInputValue(last))}`
+      start: dateInputValue(fallbackWeek.start),
+      end: dateInputValue(fallbackWeek.end),
+      label: `Week 1: ${formatDate(dateInputValue(fallbackWeek.start))} - ${formatDate(dateInputValue(fallbackWeek.end))}`
     });
   }
   return weeks;
@@ -2354,6 +2367,16 @@ function syncReportSelectorsToDates() {
   populateReportMonths(monthKey(start));
   populateReportWeeks(dateInputValue(start));
 }
+function normalizeReportWeekFromDate(inputId) {
+  const anchor = parseDateInput(val(inputId));
+  if (!anchor) return;
+  const week = getWorkWeekForDate(anchor);
+  el('weekStart').value = dateInputValue(week.start);
+  el('weekEnd').value = dateInputValue(week.end);
+  syncReportSelectorsToDates();
+  updateWeekLabel();
+  generatePreview();
+}
 function onReportMonthChange() {
   populateReportWeeks();
   applySelectedReportWeek();
@@ -2363,13 +2386,9 @@ function onReportWeekChange() {
 }
 function setDefaultWeek() {
   const today = new Date();
-  const day = today.getDay(); // 0 Sun .. 6 Sat
-  const sunday = new Date(today);
-  sunday.setDate(today.getDate() - day);
-  const saturday = new Date(sunday);
-  saturday.setDate(sunday.getDate() + 6);
-  el('weekStart').value = dateInputValue(sunday);
-  el('weekEnd').value = dateInputValue(saturday);
+  const week = getWorkWeekForDate(today);
+  el('weekStart').value = dateInputValue(week.start);
+  el('weekEnd').value = dateInputValue(week.end);
   syncReportSelectorsToDates();
   updateWeekLabel();
 }
@@ -2609,8 +2628,8 @@ document.addEventListener('input', generatePreview);
   el(id).addEventListener('input', scheduleTypedCandidateSave);
   el(id).addEventListener('blur', () => saveTypedCandidate(false));
 });
-el('weekStart').addEventListener('change', () => { updateWeekLabel(); syncReportSelectorsToDates(); generatePreview(); });
-el('weekEnd').addEventListener('change', () => { updateWeekLabel(); syncReportSelectorsToDates(); generatePreview(); });
+el('weekStart').addEventListener('change', () => normalizeReportWeekFromDate('weekStart'));
+el('weekEnd').addEventListener('change', () => normalizeReportWeekFromDate('weekEnd'));
 
 // Close modals on background click
 document.querySelectorAll('.modal-bg').forEach(m => {
