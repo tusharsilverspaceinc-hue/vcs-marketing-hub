@@ -1789,13 +1789,18 @@
         <label>Your Email</label>
         <input type="email" id="senderEmail" placeholder="Enter sender email" />
       </div>
+      <div class="grp">
+        <label>Send Access Key</label>
+        <input type="password" id="sendAccessKey" placeholder="Enter send access key" autocomplete="off" />
+      </div>
       </div>
 
       <div class="actions primary-actions">
+        <button class="btn btn-primary" onclick="sendWeeklyEmail(this)">Send Email</button>
         <button class="btn btn-primary" onclick="openInWebOutlook()">Copy Body + Open Web Outlook</button>
         <button class="btn btn-success" onclick="copyEmailBody()">Copy Body</button>
         <button class="btn btn-secondary" onclick="resetStats()">Reset Numbers</button>
-        <p class="hint">Tip: Microsoft blocks long Outlook links. This copies the exact formatted body first, then opens a safe Outlook draft for pasting.</p>
+        <p class="hint">Tip: Send Email uses the secure server sender. If sending is not configured yet, use the Outlook copy fallback.</p>
       </div>
     </div>
 
@@ -1916,6 +1921,7 @@
 <script>
 // ========== STATE ==========
 const STORAGE_KEY = 'wcrg_candidates_v1';
+const SEND_KEY_STORAGE_KEY = 'wcrg_send_access_key_v1';
 let candidates = [];
 let editingId = null;
 
@@ -2559,6 +2565,54 @@ function generatePreview() {
 }
 
 // ========== ACTIONS ==========
+function setActionBusy(button, busy, label) {
+  if (!button) return;
+  if (busy) {
+    button.dataset.originalText = button.textContent;
+    button.textContent = label || 'Working...';
+    button.disabled = true;
+    return;
+  }
+  button.disabled = false;
+  button.textContent = button.dataset.originalText || button.textContent;
+}
+
+async function sendWeeklyEmail(button) {
+  const c = saveTypedCandidate(false) || getSelectedCandidate();
+  const sendKey = val('sendAccessKey');
+  if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
+  if (!sendKey) { showToast('Warning: Enter the send access key first', 'var(--danger)'); return; }
+
+  localStorage.setItem(SEND_KEY_STORAGE_KEY, sendKey);
+  setActionBusy(button, true, 'Sending...');
+
+  try {
+    const response = await fetch('/api/send-weekly-feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Send-Token': sendKey
+      },
+      body: JSON.stringify({
+        to: c.email,
+        subject: buildSubject(),
+        html: buildHtmlBody(),
+        text: buildBody(),
+        replyTo: val('senderEmail')
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || result.details || 'Unable to send email');
+    }
+    showToast('Email sent successfully');
+  } catch (error) {
+    showToast(error.message || 'Unable to send email', 'var(--danger)');
+  } finally {
+    setActionBusy(button, false);
+  }
+}
+
 function openInWebOutlook() {
   const c = saveTypedCandidate(false) || getSelectedCandidate();
   if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
@@ -2662,6 +2716,12 @@ document.addEventListener('input', generatePreview);
   el(id).addEventListener('input', scheduleTypedCandidateSave);
   el(id).addEventListener('blur', () => saveTypedCandidate(false));
 });
+if (el('sendAccessKey')) {
+  el('sendAccessKey').value = localStorage.getItem(SEND_KEY_STORAGE_KEY) || '';
+  el('sendAccessKey').addEventListener('input', () => {
+    localStorage.setItem(SEND_KEY_STORAGE_KEY, val('sendAccessKey'));
+  });
+}
 el('weekStart').addEventListener('change', () => normalizeReportWeekFromDate('weekStart'));
 el('weekEnd').addEventListener('change', () => normalizeReportWeekFromDate('weekEnd'));
 
