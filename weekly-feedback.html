@@ -1792,10 +1792,10 @@
       </div>
 
       <div class="actions primary-actions">
-        <button class="btn btn-primary" onclick="openInWebOutlook()">Open in Web Outlook</button>
+        <button class="btn btn-primary" onclick="openInWebOutlook()">Copy Body + Open Web Outlook</button>
         <button class="btn btn-success" onclick="copyEmailBody()">Copy Body</button>
         <button class="btn btn-secondary" onclick="resetStats()">Reset Numbers</button>
-        <p class="hint">Tip: "Open in Web Outlook" launches the full email body as a plain-text draft. Use Copy Body when you want the formatted version.</p>
+        <p class="hint">Tip: Microsoft blocks long Outlook links. This copies the exact formatted body first, then opens a safe Outlook draft for pasting.</p>
       </div>
     </div>
 
@@ -1890,6 +1890,23 @@
     <textarea id="csvInput" rows="10" style="width:100%; padding:12px; border:1.5px solid var(--gray-200); border-radius:8px; font-family:monospace; font-size:12px; resize:vertical;" placeholder="Candidate&#9;Recruiter&#9;Team Lead&#9;Status&#9;Experience&#9;Technology&#9;Visa&#9;EAD Start Date&#9;EAD End Date&#9;Expiring in&#9;VCS / SST&#9;Ack Email&#9;Location&#9;Marketing start date&#9;Days&#9;Candidate's email address&#9;Phone number&#10;John Smith&#9;Tushar&#9;Rahul&#9;Active&#9;8 yrs&#9;Java/Spring&#9;H1B&#9;2024-01-15&#9;2027-01-14&#9;245&#9;VCS&#9;Yes&#9;NJ, USA&#9;2026-05-12&#9;9&#9;john@email.com&#9;+1 555 1234"></textarea>
     <div class="actions" style="grid-template-columns: 1fr;">
       <button class="btn btn-primary" onclick="importCSV()">📥 Import Candidates</button>
+    </div>
+  </div>
+</div>
+
+<!-- OUTLOOK PASTE HELP MODAL -->
+<div class="modal-bg" id="outlookModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Outlook Draft Ready</h3>
+      <button class="close-x" onclick="closeOutlookHelp()">×</button>
+    </div>
+    <p style="font-size:13px; color: var(--gray-600); margin-bottom: 12px; line-height: 1.5;">
+      The exact formatted email body has been copied. In Outlook, click inside the message body and paste it.
+    </p>
+    <div class="actions" style="grid-template-columns: 1fr 1fr;">
+      <button class="btn btn-success" onclick="copyEmailBody()">Copy Body Again</button>
+      <button class="btn btn-primary" onclick="closeOutlookHelp()">Done</button>
     </div>
   </div>
 </div>
@@ -2547,16 +2564,35 @@ function openInWebOutlook() {
   if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
   const subject = encodeURIComponent(buildSubject());
   const to = encodeURIComponent(c.email);
-  const body = encodeURIComponent(buildBody()).replace(/%0A/g, '%0D%0A');
-  const url = `https://outlook.office.com/mail/0/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
+  const html = buildHtmlBody();
+  const text = buildBody();
+  const url = `https://outlook.office.com/mail/0/deeplink/compose?to=${to}&subject=${subject}`;
+  const copyPromise = copyRichEmail(html, text);
   const opened = window.open('', '_blank');
+  copyPromise
+    .then(() => {
+      showToast('Exact formatted body copied. Paste it into Outlook.');
+      openOutlookHelp();
+    })
+    .catch(() => {
+      showToast('Outlook opened. Use Copy Body, then paste into the message.', 'var(--warning)');
+      openOutlookHelp();
+    });
   if (opened) {
     opened.location.href = url;
-    showToast('Outlook opened with email body.');
     return;
   }
-  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
-  showToast('Popup blocked. Opening your default mail app with body.');
+  window.location.href = `mailto:${to}?subject=${subject}`;
+}
+
+function openOutlookHelp() {
+  const modal = el('outlookModal');
+  if (modal) modal.classList.add('show');
+}
+
+function closeOutlookHelp() {
+  const modal = el('outlookModal');
+  if (modal) modal.classList.remove('show');
 }
 
 function copyRichEmail(html, text) {
