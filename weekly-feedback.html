@@ -2192,7 +2192,7 @@ function buildOutlookComposeUrl(c) {
   const bcc = currentBccEmail();
   if (cc) params.set('cc', cc);
   if (bcc) params.set('bcc', bcc);
-  return 'https://outlook.office.com/?path=/mail/action/compose&' + params.toString();
+  return 'https://outlook.office.com/mail/deeplink/compose?' + params.toString();
 }
 
 // ========== UTIL ==========
