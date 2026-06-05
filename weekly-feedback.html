@@ -2119,10 +2119,14 @@ function logEntryToSheet(c, period) {
     linkedin: num('offers')
   };
   try {
-    // URLSearchParams body keeps this a "simple" request (no CORS preflight).
-    fetch(SHEET_WEBAPP_URL, { method: 'POST', body: new URLSearchParams({ data: JSON.stringify(payload) }) })
-      .then(() => { sheetLoggedKeys.add(entryKey(c.email, period)); })
-      .catch(() => {});
+    // Fire-and-forget keeps logging reliable from file:// and other PCs.
+    fetch(SHEET_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      body: new URLSearchParams({ data: JSON.stringify(payload) })
+    }).catch(() => {});
+    sheetLoggedKeys.add(entryKey(c.email, period));
   } catch (e) { return false; }
   return true;
 }
