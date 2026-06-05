@@ -2875,7 +2875,7 @@ function validateRequiredFields() {
 }
 
 // Formatted body (bold, bullets, Times New Roman) via one Ctrl+V.
-function openInWebOutlook() {
+async function openInWebOutlook() {
   if (!validateRequiredFields()) return;
   const c = saveTypedCandidate(false) || getSelectedCandidate();
   if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
@@ -2890,18 +2890,7 @@ function openInWebOutlook() {
   // this page, which makes the copy fail and leaves the clipboard empty.
   // We deliberately do NOT pass a &body= param here, otherwise the draft would
   // pre-fill plain text and the pasted formatted version would duplicate it.
-  // Belt-and-suspenders: fire the modern async Clipboard API (best HTML
-  // fidelity) AND run the synchronous execCommand copy, so if one path is
-  // blocked the other still lands the formatted body on the clipboard.
-  if (navigator.clipboard && window.ClipboardItem) {
-    try {
-      navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([text], { type: 'text/plain' })
-      })]).catch(() => {});
-    } catch (e) { /* fall through to execCommand */ }
-  }
-  const copied = copyRichEmailSync(html);
+  const copied = await copyFormattedEmailToClipboard(html, text);
   const url = buildOutlookComposeUrl(c);
 
   const opened = window.open(url, '_blank');
@@ -2960,9 +2949,29 @@ function copyRichEmailSync(html) {
   return copied;
 }
 
+async function copyFormattedEmailToClipboard(html, text) {
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' })
+      })]);
+      return true;
+    } catch (e) {
+      // Fall through to the synchronous rich-copy path.
+    }
+  }
+  return copyRichEmailSync(html);
+}
+
 function copyRichEmail(html, text) {
-  if (copyRichEmailSync(html)) return Promise.resolve();
-  return navigator.clipboard.writeText(text);
+  return copyFormattedEmailToClipboard(html, text).then(copied => {
+    if (copied) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return Promise.reject(new Error('Clipboard copy failed'));
+  });
 }
 
 function copyEmailBody() {
@@ -2972,21 +2981,6 @@ function copyEmailBody() {
   if (!recordEntryBeforeAction(c)) return; // weekly guard + sheet logging
   const html = buildHtmlBody();
   const text = buildBody();
-  if (navigator.clipboard && window.ClipboardItem) {
-    navigator.clipboard.write([
-      new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([text], { type: 'text/plain' })
-      })
-    ]).then(() => {
-      showToast('📋 Formatted email body copied');
-    }).catch(() => {
-      copyRichEmail(html, text)
-        .then(() => showToast('Formatted email body copied'))
-        .catch(() => showToast('Warning: Copy failed', 'var(--danger)'));
-    });
-    return;
-  }
   copyRichEmail(html, text).then(() => {
     showToast('Formatted email body copied');
   }).catch(() => showToast('Warning: Copy failed', 'var(--danger)'));
