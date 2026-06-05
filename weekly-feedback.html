@@ -2184,15 +2184,20 @@ function currentBccEmail() {
   return ALWAYS_BCC;
 }
 
+function outlookParam(key, value) {
+  return encodeURIComponent(key) + '=' + encodeURIComponent(value);
+}
+
 function buildOutlookComposeUrl(c) {
-  const params = new URLSearchParams();
-  params.set('to', c.email);
-  params.set('subject', buildSubject());
-  const cc = currentCcEmail('; ');
+  const params = [
+    outlookParam('to', c.email),
+    outlookParam('subject', buildSubject())
+  ];
+  const cc = currentCcEmail(';');
   const bcc = currentBccEmail();
-  if (cc) params.set('cc', cc);
-  if (bcc) params.set('bcc', bcc);
-  return 'https://outlook.office.com/mail/deeplink/compose?' + params.toString();
+  if (cc) params.push(outlookParam('cc', cc));
+  if (bcc) params.push(outlookParam('bcc', bcc));
+  return 'https://outlook.office.com/mail/deeplink/compose?' + params.join('&');
 }
 
 // ========== UTIL ==========
