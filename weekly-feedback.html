@@ -2189,15 +2189,15 @@ function outlookParam(key, value) {
 }
 
 function buildOutlookComposeUrl(c) {
-  const params = [
-    outlookParam('to', c.email),
+  const mailtoParams = [
     outlookParam('subject', buildSubject())
   ];
-  const cc = currentCcEmail(';');
+  const cc = currentCcEmail(',');
   const bcc = currentBccEmail();
-  if (cc) params.push(outlookParam('cc', cc));
-  if (bcc) params.push(outlookParam('bcc', bcc));
-  return 'https://outlook.office.com/mail/deeplink/compose?' + params.join('&');
+  if (cc) mailtoParams.push(outlookParam('cc', cc));
+  if (bcc) mailtoParams.push(outlookParam('bcc', bcc));
+  const mailtoUri = 'mailto:' + encodeURIComponent(c.email) + '?' + mailtoParams.join('&');
+  return 'https://outlook.office.com/mail/deeplink/compose?mailtouri=' + encodeURIComponent(mailtoUri);
 }
 
 // ========== UTIL ==========
