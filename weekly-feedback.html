@@ -1890,6 +1890,7 @@
         <div class="meta">
           <div><strong>To:</strong> <span id="prevTo">—</span></div>
           <div><strong>Cc:</strong> <span id="prevCc">—</span></div>
+          <div><strong>Bcc:</strong> <span id="prevBcc">—</span></div>
           <div><strong>From:</strong> <span id="prevFrom">—</span></div>
           <div><strong>Subject:</strong> <span id="prevSubject">—</span></div>
         </div>
@@ -2155,14 +2156,27 @@ function recordEntryBeforeAction(c) {
   return true;
 }
 
-// ========== COMPANY → COMPLIANCE CC ==========
+// ========== COMPANY / BRANCH RECIPIENTS ==========
 const COMPANY_CC = {
   SST: 'Compliance@silverspaceinc.com',
   VCS: 'Compliance@vizvainc.com',
   FED: 'compliance@flawless-ed.com'
 };
+const BRANCH_CC = {
+  LKN: ['aryan.mishra@silverspaceinc.com'],
+  GGR: ['Brhamdev.Sharma@vizvainc.com', 'shashank.sharma@silverspaceinc.com'],
+  AMD: ['Adnan.Shaikh@silverspaceinc.com', 'akash.avasthi@silverspaceinc.com']
+};
+const ALWAYS_BCC = 'Tushar.ahuja@silverspaceinc.com';
+
 function currentCcEmail() {
-  return COMPANY_CC[document.getElementById('candidateCompany').value] || '';
+  const companyCc = COMPANY_CC[document.getElementById('candidateCompany').value];
+  const branchCc = BRANCH_CC[document.getElementById('candidateBranch').value] || [];
+  return [companyCc].concat(branchCc).filter(Boolean).join(', ');
+}
+
+function currentBccEmail() {
+  return ALWAYS_BCC;
 }
 
 // ========== UTIL ==========
@@ -2807,6 +2821,7 @@ function generatePreview() {
   el('prevTo').textContent = (c && c.email) ? (c.name + ' <' + c.email + '>') : '— Enter candidate email —';
   const cc = currentCcEmail();
   el('prevCc').textContent = cc || '—';
+  el('prevBcc').textContent = currentBccEmail();
   el('prevFrom').textContent = val('senderEmail') || '—';
   el('prevSubject').textContent = buildSubject();
   el('prevBody').innerHTML = buildHtmlBody();
@@ -2869,8 +2884,10 @@ function openInWebOutlook() {
   }
   const copied = copyRichEmailSync(html);
   const cc = currentCcEmail();
+  const bcc = currentBccEmail();
   let url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}`;
   if (cc) url += `&cc=${encodeURIComponent(cc)}`;
+  if (bcc) url += `&bcc=${encodeURIComponent(bcc)}`;
 
   const opened = window.open(url, '_blank');
   if (!opened) {
