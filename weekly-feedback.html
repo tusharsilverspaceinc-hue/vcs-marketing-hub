@@ -1750,18 +1750,18 @@
       <div class="manual-candidate">
         <div class="row">
           <div class="grp">
-            <label>Candidate Name</label>
-            <input type="text" id="candidateName" placeholder="e.g., John Smith" />
+            <label>Candidate Name *</label>
+            <input type="text" id="candidateName" placeholder="e.g., John Smith" required />
           </div>
           <div class="grp">
-            <label>Candidate Email</label>
-            <input type="email" id="candidateEmail" placeholder="john.smith@email.com" />
+            <label>Candidate Email *</label>
+            <input type="email" id="candidateEmail" placeholder="john.smith@email.com" required />
           </div>
         </div>
         <div class="row">
           <div class="grp">
-            <label>Company</label>
-            <select id="candidateCompany" onchange="generatePreview()">
+            <label>Company *</label>
+            <select id="candidateCompany" onchange="generatePreview()" required>
               <option value="">— Select company —</option>
               <option value="SST">SST</option>
               <option value="VCS">VCS</option>
@@ -1769,8 +1769,8 @@
             </select>
           </div>
           <div class="grp">
-            <label>Branch</label>
-            <select id="candidateBranch" onchange="generatePreview()">
+            <label>Branch *</label>
+            <select id="candidateBranch" onchange="generatePreview()" required>
               <option value="">— Select branch —</option>
               <option value="GGR">GGR</option>
               <option value="LKN">LKN</option>
@@ -1803,22 +1803,22 @@
       <p class="section-copy">Select the month and week. The start and end dates will update automatically from Monday to Friday.</p>
       <div class="row">
         <div class="grp">
-          <label>Report Month</label>
-          <select id="reportMonth" onchange="onReportMonthChange()"></select>
+          <label>Report Month *</label>
+          <select id="reportMonth" onchange="onReportMonthChange()" required></select>
         </div>
         <div class="grp">
-          <label>Report Week</label>
-          <select id="reportWeek" onchange="onReportWeekChange()"></select>
+          <label>Report Week *</label>
+          <select id="reportWeek" onchange="onReportWeekChange()" required></select>
         </div>
       </div>
       <div class="row">
         <div class="grp">
-          <label>Week Start Date</label>
-          <input type="date" id="weekStart" />
+          <label>Week Start Date *</label>
+          <input type="date" id="weekStart" required />
         </div>
         <div class="grp">
-          <label>Week End Date</label>
-          <input type="date" id="weekEnd" />
+          <label>Week End Date *</label>
+          <input type="date" id="weekEnd" required />
         </div>
       </div>
       </div>
@@ -1828,12 +1828,12 @@
       <h2 class="split-heading"><span class="heading-accent">Weekly</span> <span class="heading-main">Activity</span></h2>
       <p class="section-copy">Use zero when an activity did not happen this week. The email text updates automatically.</p>
       <div class="stats">
-        <div class="stat"><label>Applications Submitted</label><input type="number" id="applications" value="0" min="0" /></div>
-        <div class="stat"><label>Screening Calls</label><input type="number" id="screenings" value="0" min="0" /></div>
-        <div class="stat"><label>Interviews Scheduled</label><input type="number" id="interviews" value="0" min="0" /></div>
-        <div class="stat"><label>Assessments</label><input type="number" id="assessments" value="0" min="0" /></div>
-        <div class="stat"><label>Submissions (RTR)</label><input type="number" id="rtr" value="0" min="0" /></div>
-        <div class="stat"><label>LinkedIn Connections</label><input type="number" id="offers" value="0" min="0" /></div>
+        <div class="stat"><label>Applications Submitted *</label><input type="number" id="applications" value="0" min="0" required /></div>
+        <div class="stat"><label>Screening Calls *</label><input type="number" id="screenings" value="0" min="0" required /></div>
+        <div class="stat"><label>Interviews Scheduled *</label><input type="number" id="interviews" value="0" min="0" required /></div>
+        <div class="stat"><label>Assessments *</label><input type="number" id="assessments" value="0" min="0" required /></div>
+        <div class="stat"><label>Submissions (RTR) *</label><input type="number" id="rtr" value="0" min="0" required /></div>
+        <div class="stat"><label>LinkedIn Connections *</label><input type="number" id="offers" value="0" min="0" required /></div>
       </div>
       </div>
 
