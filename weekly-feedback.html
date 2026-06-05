@@ -1657,6 +1657,52 @@
       font-size: 24px !important;
     }
   }
+
+  /* HOW-TO INSTRUCTION BOX */
+  .howto {
+    grid-column: 1 / -1;
+    background: rgba(20, 162, 226, 0.10);
+    border: 1px solid rgba(20, 162, 226, 0.45);
+    border-left: 4px solid #14a2e2;
+    border-radius: 0;
+    padding: 16px 18px;
+    margin-top: 4px;
+  }
+  .howto-title {
+    color: #35c3ff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .howto-steps {
+    margin: 0 0 12px 20px;
+    padding: 0;
+    color: #e8f4fc;
+  }
+  .howto-steps li {
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+  .howto-steps strong {
+    color: #ffffff;
+    font-weight: 800;
+  }
+  .howto-note {
+    background: rgba(238, 189, 85, 0.12);
+    border: 1px solid rgba(238, 189, 85, 0.45);
+    border-left: 4px solid #eebd55;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #ffe9c2;
+  }
+  .howto-note strong {
+    color: #ffffff;
+    font-weight: 800;
+  }
 </style>
 </head>
 <body>
@@ -1710,6 +1756,26 @@
           <div class="grp">
             <label>Candidate Email</label>
             <input type="email" id="candidateEmail" placeholder="john.smith@email.com" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="grp">
+            <label>Company</label>
+            <select id="candidateCompany" onchange="generatePreview()">
+              <option value="">— Select company —</option>
+              <option value="SST">SST</option>
+              <option value="VCS">VCS</option>
+              <option value="FED">FED</option>
+            </select>
+          </div>
+          <div class="grp">
+            <label>Branch</label>
+            <select id="candidateBranch" onchange="generatePreview()">
+              <option value="">— Select branch —</option>
+              <option value="GGR">GGR</option>
+              <option value="LKN">LKN</option>
+              <option value="AMD">AMD</option>
+            </select>
           </div>
         </div>
         <div class="grp">
@@ -1792,10 +1858,18 @@
       </div>
 
       <div class="actions primary-actions">
-        <button class="btn btn-primary" onclick="openInWebOutlook()">Copy Body + Open Web Outlook</button>
-        <button class="btn btn-success" onclick="copyEmailBody()">Copy Body</button>
+        <button class="btn btn-primary" onclick="openInWebOutlook()">Open in Outlook (Formatted)</button>
+        <button class="btn btn-success" onclick="copyEmailBody()">Copy Body (if paste didn't work)</button>
         <button class="btn btn-secondary" onclick="resetStats()">Reset Numbers</button>
-        <p class="hint">Tip: Microsoft blocks long Outlook links. This copies the exact formatted body first, then opens a safe Outlook draft for pasting.</p>
+        <div class="howto">
+          <div class="howto-title">How to use — 3 steps</div>
+          <ol class="howto-steps">
+            <li>Click <strong>Open in Outlook (Formatted)</strong>. A new Web Outlook draft opens with the <strong>To</strong> and <strong>Subject</strong> already filled in, and the formatted body is copied for you.</li>
+            <li>In the new draft, click once inside the <strong>message area</strong> (the big empty box below the subject).</li>
+            <li>Press <strong>Ctrl&nbsp;+&nbsp;V</strong> to paste. The full letter appears with <strong>Times New Roman</strong>, <strong>bold headings</strong> and <strong>bullet points</strong> — exactly like the preview.</li>
+          </ol>
+          <div class="howto-note"><strong>Note:</strong> The single <strong>Ctrl + V</strong> is required — formatting (bold, bullets, font) cannot be added to a Web Outlook draft automatically. If the paste ever comes out blank, click <strong>Copy Body</strong> above, then go to the draft and press Ctrl + V again.</div>
+        </div>
       </div>
     </div>
 
@@ -1815,6 +1889,7 @@
       <div class="preview">
         <div class="meta">
           <div><strong>To:</strong> <span id="prevTo">—</span></div>
+          <div><strong>Cc:</strong> <span id="prevCc">—</span></div>
           <div><strong>From:</strong> <span id="prevFrom">—</span></div>
           <div><strong>Subject:</strong> <span id="prevSubject">—</span></div>
         </div>
@@ -1902,7 +1977,7 @@
       <button class="close-x" onclick="closeOutlookHelp()">×</button>
     </div>
     <p style="font-size:13px; color: var(--gray-600); margin-bottom: 12px; line-height: 1.5;">
-      The exact formatted email body has been copied. In Outlook, click inside the message body and paste it.
+      A new Web Outlook draft has opened with the To and Subject filled in, and the formatted email body has been copied. Click inside the message area and press Ctrl+V to paste it.
     </p>
     <div class="actions" style="grid-template-columns: 1fr 1fr;">
       <button class="btn btn-success" onclick="copyEmailBody()">Copy Body Again</button>
@@ -1918,6 +1993,177 @@
 const STORAGE_KEY = 'wcrg_candidates_v1';
 let candidates = [];
 let editingId = null;
+
+// ========== GOOGLE SHEET LOGGING CONFIG ==========
+// READ-ONLY published CSV (used to check "already sent this week").
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSf2KCgFM6f_MgBbdCPMeyfEw5I5h_bem9Ayx2DtvDTMm8IcJQHT4GiDAR02lWZ0IILEnlAvdjfU7Pn/pub?output=csv';
+// WRITE endpoint — paste the Apps Script Web App URL here (see setup steps).
+// Until this is filled in, rows cannot be written to the sheet.
+const SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwnvsA9pqazlqQmW0pp00abjHTEGk0Sw_pzSrnPW8KM-q9dAVlk_ikKLWMvT1VYeoRZ/exec';
+
+// Keys = "candidateemail|report period". Loaded from the sheet at startup
+// (other people's past entries) plus anything logged in this browser session.
+const sheetLoggedKeys = new Set();
+const sessionLoggedKeys = new Set();
+
+// Minimal RFC-4180 CSV parser (handles quoted fields with commas/newlines).
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += ch;
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      row.push(field); field = '';
+    } else if (ch === '\n') {
+      row.push(field); rows.push(row); row = []; field = '';
+    } else if (ch !== '\r') {
+      field += ch;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function currentReportPeriod() {
+  const s = val('weekStart');
+  const e = val('weekEnd');
+  return (s && e) ? (formatDate(s) + ' - ' + formatDate(e)) : '[Week Dates]';
+}
+
+// Month tab name, e.g. "June 2026" (used as the sheet/tab name).
+function currentMonthLabel() {
+  const sel = el('reportMonth');
+  if (sel && sel.selectedIndex >= 0 && sel.options[sel.selectedIndex]) {
+    return sel.options[sel.selectedIndex].text;
+  }
+  const s = parseDateInput(val('weekStart'));
+  return s ? s.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unsorted';
+}
+
+// Week banner label, e.g. "Week 1".
+function currentWeekLabel() {
+  const sel = el('reportWeek');
+  if (sel && sel.selectedIndex >= 0 && sel.options[sel.selectedIndex]) {
+    const m = sel.options[sel.selectedIndex].text.match(/Week\s*\d+/i);
+    if (m) return m[0].replace(/\s+/g, ' ');
+  }
+  return 'Week ?';
+}
+
+function entryKey(email, period) {
+  return (email || '').trim().toLowerCase() + '|' + (period || '').trim();
+}
+
+// Pull existing entries so the weekly guard also catches reports sent by other
+// people / earlier sessions. Prefer the Apps Script GET (covers ALL month tabs
+// and is always live); fall back to the published CSV (first tab only, ~5 min
+// lag) when the script URL isn't configured yet.
+async function loadLoggedKeys() {
+  if (SHEET_WEBAPP_URL && SHEET_WEBAPP_URL.indexOf('PASTE_') !== 0) {
+    try {
+      const res = await fetch(SHEET_WEBAPP_URL, { cache: 'no-store' });
+      const obj = await res.json();
+      if (obj && Array.isArray(obj.keys)) {
+        // Keys arrive as "loweremail|Report Period" — same shape as entryKey().
+        obj.keys.forEach(k => { if (k) sheetLoggedKeys.add(k.trim()); });
+        return;
+      }
+    } catch (e) {
+      // fall through to CSV
+    }
+  }
+  if (!SHEET_CSV_URL) return;
+  try {
+    const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+    const rows = parseCSV(await res.text());
+    if (!rows.length) return;
+    const header = rows[0].map(h => h.trim().toLowerCase());
+    const ei = header.indexOf('candidate email');
+    const pi = header.indexOf('report period');
+    if (ei < 0 || pi < 0) return;
+    for (let i = 1; i < rows.length; i++) {
+      const email = (rows[i][ei] || '').trim();
+      const period = (rows[i][pi] || '').trim();
+      if (email && period) sheetLoggedKeys.add(entryKey(email, period));
+    }
+  } catch (e) {
+    // CORS/offline — the server-side script still blocks duplicates.
+  }
+}
+
+// Fire-and-forget append to the sheet. Runs AFTER the user-gesture action so it
+// never blocks opening Outlook or copying.
+function logEntryToSheet(c, period) {
+  if (!SHEET_WEBAPP_URL || SHEET_WEBAPP_URL.indexOf('PASTE_') === 0) return false;
+  const payload = {
+    month: currentMonthLabel(),
+    week: currentWeekLabel(),
+    company: document.getElementById('candidateCompany').value,
+    branch: document.getElementById('candidateBranch').value,
+    period: period,
+    name: c.name || '',
+    email: c.email || '',
+    apps: num('applications'),
+    scr: num('screenings'),
+    intv: num('interviews'),
+    asmt: num('assessments'),
+    rtr: num('rtr'),
+    linkedin: num('offers')
+  };
+  try {
+    // URLSearchParams body keeps this a "simple" request (no CORS preflight).
+    fetch(SHEET_WEBAPP_URL, { method: 'POST', body: new URLSearchParams({ data: JSON.stringify(payload) }) })
+      .then(() => { sheetLoggedKeys.add(entryKey(c.email, period)); })
+      .catch(() => {});
+  } catch (e) { return false; }
+  return true;
+}
+
+// Weekly guard + logging. Returns true if the caller may proceed (open/copy).
+// Uses a synchronous confirm() so it stays inside the click gesture.
+function recordEntryBeforeAction(c) {
+  const period = currentReportPeriod();
+  const key = entryKey(c.email, period);
+
+  // Already logged in THIS session (e.g. Copy then Open for the same email) —
+  // proceed silently, don't write a second row.
+  if (sessionLoggedKeys.has(key)) return true;
+
+  // Logged previously / by someone else this week — warn and confirm.
+  if (sheetLoggedKeys.has(key)) {
+    const ok = confirm(
+      'A weekly report for ' + (c.name || 'this candidate') +
+      ' has already been logged for this week (' + period + ').\n\n' +
+      'This tool allows one email per candidate per week. Continue anyway?'
+    );
+    if (!ok) return false;
+    sessionLoggedKeys.add(key); // don't add a duplicate row
+    return true;
+  }
+
+  // New entry for this candidate + week → log it once.
+  const logged = logEntryToSheet(c, period);
+  sessionLoggedKeys.add(key);
+  if (!logged) showToast('Note: sheet logging is not configured yet.', 'var(--warning)');
+  return true;
+}
+
+// ========== COMPANY → COMPLIANCE CC ==========
+const COMPANY_CC = {
+  SST: 'Compliance@silverspaceinc.com',
+  VCS: 'Compliance@vizvainc.com',
+  FED: 'compliance@flawless-ed.com'
+};
+function currentCcEmail() {
+  return COMPANY_CC[document.getElementById('candidateCompany').value] || '';
+}
 
 // ========== UTIL ==========
 function val(id) { return document.getElementById(id).value.trim(); }
@@ -1971,6 +2217,8 @@ function saveTypedCandidate(showMessage) {
   const name = val('candidateName');
   const email = val('candidateEmail');
   const role = val('candidateRole');
+  const company = val('candidateCompany');
+  const branch = val('candidateBranch');
   if (!name || !email || !email.includes('@')) return null;
 
   const existing = candidates.find(x => x.email.toLowerCase() === email.toLowerCase());
@@ -1978,13 +2226,15 @@ function saveTypedCandidate(showMessage) {
     existing.name = name;
     existing.email = email;
     existing.role = role;
+    existing.company = company;
+    existing.branch = branch;
     saveAll(existing.id);
     el('candidatePicker').value = existing.id;
     if (showMessage) showToast('Candidate saved locally');
     return existing;
   }
 
-  const record = { id: uid(), name, email, role, phone: '' };
+  const record = { id: uid(), name, email, role, company, branch, phone: '' };
   candidates.push(record);
   saveAll(record.id);
   el('candidatePicker').value = record.id;
@@ -2022,6 +2272,8 @@ function onPickCandidate() {
     el('candidateName').value = c.name || '';
     el('candidateEmail').value = c.email || '';
     el('candidateRole').value = c.role || '';
+    el('candidateCompany').value = c.company || '';
+    el('candidateBranch').value = c.branch || '';
   }
   generatePreview();
 }
@@ -2440,7 +2692,7 @@ function buildSubject() {
   const s = val('weekStart');
   const e = val('weekEnd');
   const period = (s && e) ? (formatDate(s) + ' - ' + formatDate(e)) : '[Week Dates]';
-  return 'Weekly Candidate Activity Update | ' + name + ' | ' + period;
+  return 'Weekly Progress Report | ' + name + ' | ' + period;
 }
 
 function getEmailContext() {
@@ -2553,36 +2805,85 @@ function buildHtmlBody() {
 function generatePreview() {
   const c = getSelectedCandidate();
   el('prevTo').textContent = (c && c.email) ? (c.name + ' <' + c.email + '>') : '— Enter candidate email —';
+  const cc = currentCcEmail();
+  el('prevCc').textContent = cc || '—';
   el('prevFrom').textContent = val('senderEmail') || '—';
   el('prevSubject').textContent = buildSubject();
   el('prevBody').innerHTML = buildHtmlBody();
 }
 
 // ========== ACTIONS ==========
+// Required-field check shared by both actions. Returns true if all good,
+// otherwise shows exactly which fields are missing and returns false.
+function validateRequiredFields() {
+  const missing = [];
+  if (!val('candidateName')) missing.push('Candidate Name');
+  const email = val('candidateEmail');
+  if (!email || !email.includes('@')) missing.push('Candidate Email');
+  if (!val('candidateCompany')) missing.push('Company');
+  if (!val('candidateBranch')) missing.push('Branch');
+  if (!val('reportMonth')) missing.push('Report Month');
+  if (!val('reportWeek')) missing.push('Report Week');
+  if (!val('weekStart')) missing.push('Week Start Date');
+  if (!val('weekEnd')) missing.push('Week End Date');
+  [['applications','Applications Submitted'], ['screenings','Screening Calls'],
+   ['interviews','Interviews Scheduled'], ['assessments','Assessments'],
+   ['rtr','Submissions (RTR)'], ['offers','LinkedIn Connections']]
+    .forEach(([id, label]) => { if (el(id).value.trim() === '') missing.push(label); });
+
+  if (missing.length) {
+    showToast('Please fill all required fields: ' + missing.join(', '), 'var(--danger)');
+    return false;
+  }
+  return true;
+}
+
+// Formatted body (bold, bullets, Times New Roman) via one Ctrl+V.
 function openInWebOutlook() {
+  if (!validateRequiredFields()) return;
   const c = saveTypedCandidate(false) || getSelectedCandidate();
   if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
+  if (!recordEntryBeforeAction(c)) return; // weekly guard + sheet logging
   const subject = encodeURIComponent(buildSubject());
   const to = encodeURIComponent(c.email);
   const html = buildHtmlBody();
   const text = buildBody();
-  const url = `https://outlook.office.com/mail/0/deeplink/compose?to=${to}&subject=${subject}`;
-  const copyPromise = copyRichEmail(html, text);
-  const opened = window.open('', '_blank');
-  copyPromise
-    .then(() => {
-      showToast('Exact formatted body copied. Paste it into Outlook.');
-      openOutlookHelp();
-    })
-    .catch(() => {
-      showToast('Outlook opened. Use Copy Body, then paste into the message.', 'var(--warning)');
-      openOutlookHelp();
-    });
-  if (opened) {
-    opened.location.href = url;
-    return;
+  // The compose deeplink fills To + Subject. Formatting (bold, bullets, Times
+  // New Roman) can't travel through a URL, so we copy the fully formatted body
+  // and the user pastes it with a single Ctrl+V — the only way to get rich
+  // formatting into Web Outlook.
+  // IMPORTANT: copy BEFORE opening the tab. Opening a tab steals focus from
+  // this page, which makes the copy fail and leaves the clipboard empty.
+  // We deliberately do NOT pass a &body= param here, otherwise the draft would
+  // pre-fill plain text and the pasted formatted version would duplicate it.
+  // Belt-and-suspenders: fire the modern async Clipboard API (best HTML
+  // fidelity) AND run the synchronous execCommand copy, so if one path is
+  // blocked the other still lands the formatted body on the clipboard.
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' })
+      })]).catch(() => {});
+    } catch (e) { /* fall through to execCommand */ }
   }
-  window.location.href = `mailto:${to}?subject=${subject}`;
+  const copied = copyRichEmailSync(html);
+  const cc = currentCcEmail();
+  let url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}`;
+  if (cc) url += `&cc=${encodeURIComponent(cc)}`;
+
+  const opened = window.open(url, '_blank');
+  if (!opened) {
+    // Popup blocked — fall back to navigating the current tab.
+    window.location.href = url;
+  }
+
+  if (copied) {
+    showToast('Draft opened. Click in the message area and press Ctrl+V to paste the formatted body.');
+  } else {
+    showToast('Draft opened, but the copy was blocked. Allow clipboard access, then use "Copy Body".', 'var(--warning)');
+  }
+  openOutlookHelp();
 }
 
 function openOutlookHelp() {
@@ -2595,7 +2896,10 @@ function closeOutlookHelp() {
   if (modal) modal.classList.remove('show');
 }
 
-function copyRichEmail(html, text) {
+// Synchronously copy the formatted HTML to the clipboard using a hidden
+// contenteditable selection + execCommand. Returns true on success. This MUST
+// run while the page still has focus (e.g. before opening a new tab).
+function copyRichEmailSync(html) {
   const temp = document.createElement('div');
   temp.setAttribute('contenteditable', 'true');
   temp.style.position = 'fixed';
@@ -2621,12 +2925,19 @@ function copyRichEmail(html, text) {
   if (previousRange) selection.addRange(previousRange);
   document.body.removeChild(temp);
 
-  if (copied) return Promise.resolve();
+  return copied;
+}
+
+function copyRichEmail(html, text) {
+  if (copyRichEmailSync(html)) return Promise.resolve();
   return navigator.clipboard.writeText(text);
 }
 
 function copyEmailBody() {
-  saveTypedCandidate(false);
+  if (!validateRequiredFields()) return;
+  const c = saveTypedCandidate(false) || getSelectedCandidate();
+  if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
+  if (!recordEntryBeforeAction(c)) return; // weekly guard + sheet logging
   const html = buildHtmlBody();
   const text = buildBody();
   if (navigator.clipboard && window.ClipboardItem) {
@@ -2674,5 +2985,6 @@ document.querySelectorAll('.modal-bg').forEach(m => {
 loadCandidates();
 setDefaultWeek();
 generatePreview();
+loadLoggedKeys(); // pull existing sheet entries for the weekly duplicate guard
 </script></body>
 </html>
