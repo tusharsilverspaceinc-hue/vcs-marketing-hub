@@ -2173,14 +2173,26 @@ const BRANCH_CC = {
 };
 const ALWAYS_BCC = 'Tushar.ahuja@silverspaceinc.com';
 
-function currentCcEmail() {
+function currentCcEmail(separator) {
+  const joiner = separator || ', ';
   const companyCc = COMPANY_CC[document.getElementById('candidateCompany').value];
   const branchCc = BRANCH_CC[document.getElementById('candidateBranch').value] || [];
-  return [companyCc].concat(branchCc).filter(Boolean).join(', ');
+  return [companyCc].concat(branchCc).filter(Boolean).join(joiner);
 }
 
 function currentBccEmail() {
   return ALWAYS_BCC;
+}
+
+function buildOutlookComposeUrl(c) {
+  const params = new URLSearchParams();
+  params.set('to', c.email);
+  params.set('subject', buildSubject());
+  const cc = currentCcEmail('; ');
+  const bcc = currentBccEmail();
+  if (cc) params.set('cc', cc);
+  if (bcc) params.set('bcc', bcc);
+  return 'https://outlook.office.com/?path=/mail/action/compose&' + params.toString();
 }
 
 // ========== UTIL ==========
@@ -2863,12 +2875,10 @@ function openInWebOutlook() {
   const c = saveTypedCandidate(false) || getSelectedCandidate();
   if (!c || !c.email || !c.email.includes('@')) { showToast('Warning: Enter a valid candidate email first', 'var(--danger)'); return; }
   if (!recordEntryBeforeAction(c)) return; // weekly guard + sheet logging
-  const subject = encodeURIComponent(buildSubject());
-  const to = encodeURIComponent(c.email);
   const html = buildHtmlBody();
   const text = buildBody();
-  // The compose deeplink fills To + Subject. Formatting (bold, bullets, Times
-  // New Roman) can't travel through a URL, so we copy the fully formatted body
+  // The Outlook compose link fills recipients + subject. Formatting (bold,
+  // bullets, Times New Roman) can't travel through a URL, so we copy the fully formatted body
   // and the user pastes it with a single Ctrl+V — the only way to get rich
   // formatting into Web Outlook.
   // IMPORTANT: copy BEFORE opening the tab. Opening a tab steals focus from
@@ -2887,11 +2897,7 @@ function openInWebOutlook() {
     } catch (e) { /* fall through to execCommand */ }
   }
   const copied = copyRichEmailSync(html);
-  const cc = currentCcEmail();
-  const bcc = currentBccEmail();
-  let url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}`;
-  if (cc) url += `&cc=${encodeURIComponent(cc)}`;
-  if (bcc) url += `&bcc=${encodeURIComponent(bcc)}`;
+  const url = buildOutlookComposeUrl(c);
 
   const opened = window.open(url, '_blank');
   if (!opened) {
